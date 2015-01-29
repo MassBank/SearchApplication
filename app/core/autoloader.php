@@ -12,14 +12,19 @@ function autoloader($class) {
 		require $filename;
 	}
 	
+	$filename = APP . "/util/" . strtolower ( $class ) . ".php";
+	if (file_exists ( $filename )) {
+		require $filename;
+	}
+	
 }
 
 // run autoloader
 spl_autoload_register ( 'autoloader' );
 
+require_once APP . '/config/config.php';
+
 // start sessions
 Session::init ();
-
-require (APP . '/config/config.php');
 
 ?>

@@ -1,0 +1,23 @@
+<?php
+
+class Keyword
+{
+	const COMPOUND_ID = 'ACCESSION:';
+	const COMPOUND_TITLE = 'RECORD_TITLE:';
+	const COMPOUND_FORMULA = 'CH$FORMULA:';
+	const COMPOUND_EXACT_MASS = 'CH$EXACT_MASS:';
+	const COMPOUND_ION_MODE = 'AC$MASS_SPECTROMETRY: ION_MODE';
+	
+	const COMPOUND_NAME_NAME = 'CH$NAME:';
+	
+	const INSTRUMENT_TYPE = 'AC$INSTRUMENT_TYPE:';
+	
+	const MS_TYPE = 'AC$MASS_SPECTROMETRY: MS_TYPE';
+	
+	const PEAK = 'PK$PEAK:';
+	
+	const BLANK = ' ';
+	const EOF = '//';
+}
+
+?>

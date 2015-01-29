@@ -49,6 +49,8 @@ define('DB_USER', 'root');
 define('DB_PASS', 'abcd1234');
 define('DB_CHARSET', 'utf8');
 
+define('SITETITLE', 'MassBank | Database');
+
 //set prefix for sessions
-define('SESSION_PREFIX','dc_');
+define('SESSION_PREFIX','massbank_');
 ?>
