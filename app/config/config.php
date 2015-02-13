@@ -2,8 +2,6 @@
 
 /**
  * Configuration
- *
- * For more info about constants please @see http://php.net/manual/en/function.define.php
  */
 /**
  * Configuration for: Error reporting

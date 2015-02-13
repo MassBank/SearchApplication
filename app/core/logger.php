@@ -78,5 +78,9 @@ class Logger {
          exit;
       } 
    }
+   
+   public static function println ($string_message) {
+		$_SERVER['SERVER_PROTOCOL'] ? print "$string_message<br />" : print "$string_message\n";
+   }
 }
 ?>

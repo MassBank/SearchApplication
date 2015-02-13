@@ -1,6 +1,6 @@
 <?php
 
-class StringBuilder {
+class String_Builder {
 	var $_string = '';
 
 	/**
@@ -16,7 +16,7 @@ class StringBuilder {
 	 * @param none
 	 * @return the fully appended string
 	 */
-	public function toString() {
+	public function to_string() {
 		return $this->_string;
 	}
 }

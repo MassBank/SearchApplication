@@ -6,12 +6,12 @@ class Database
 		$this->open_connection();
 	}
 	
-	public function listResult($sql, $parameters = NULL) {
+	public function list_result($sql, $parameters = NULL) {
 		$query = $this->execute($sql, $parameters);
 		return $query->fetchAll(PDO::FETCH_ASSOC);
 	}
 	
-	public function uniqueResult($sql, $parameters = NULL) {
+	public function unique_result($sql, $parameters = NULL) {
 		$query = $this->execute($sql, $parameters);
 		return $query->fetch(PDO::FETCH_ASSOC);
 	}

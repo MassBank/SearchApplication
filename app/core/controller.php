@@ -12,13 +12,13 @@ class Controller
 
 	public function GET($name = NULL)
 	{
-		// 		echo $_SERVER['QUERY_STRING'];
+		// echo $_SERVER['QUERY_STRING'];
 		if (empty($_GET[$name])) {
-			return false;
+			return NULL;
 		}
 	
-		$vars = $this->exist_params($name);
-	
+		$vars = $this->exist_params();
+
 		if (sizeof($vars[$name]) > 1) {
 			$result = array();
 			foreach ($vars[$name] as $value) {
@@ -33,11 +33,11 @@ class Controller
 	public function GET_ARRAY($name = NULL)
 	{
 		if (empty($_GET[$name])) {
-			return false;
+			return NULL;
 		}
 	
-		$vars = $this->exist_params($name);
 		$result = array();
+		$vars = $this->exist_params();
 		if (sizeof($vars[$name]) > 0) {
 			foreach ($vars[$name] as $value) {
 				array_push($result, $value);
@@ -45,41 +45,30 @@ class Controller
 		}
 		return $result;
 	}
+
+	public function GET_PARAM($name, $params)
+	{
+		$name = strtolower($name); // change param name to lower-case
+		if ( isset($params[$name]) ) {
+			return $params[$name];
+		}
+		return NULL;
+	}
+	
+	protected function parse_query_str()
+	{
+		return $this->_parse_str_ext($_SERVER['QUERY_STRING']);
+	}
 	
 	protected function to_json($data = NULL) {
 		$result = array();
-		if ( $data == NULL ) {
+		if ( !empty($data) ) {
 			$result['data'] = $data;
 			$result['success'] = true;
 		} else {
 			$result['success'] = false;
 		}
 		return json_encode($result);
-	}
-	
-	protected function get_compound_model()
-	{
-		return $this->load_model('compound_model');
-	}
-	
-	protected function get_compound_name_model()
-	{
-		return $this->load_model('compound_name_model');
-	}
-	
-	protected function get_instrument_model()
-	{
-		return $this->load_model('instrument_model');
-	}
-	
-	protected function get_ms_model()
-	{
-		return $this->load_model('ms_model');
-	}
-	
-	protected function get_peak_model()
-	{
-		return $this->load_model('peak_model');
 	}
 	
 	//Display an error page if nothing exists
@@ -91,28 +80,6 @@ class Controller
 		die;
 	}
 	
-	//function to load model on request
-	private function load_model($name)
-	{
-		$modelpath = strtolower(APP . '/model/'.$name.'.php');
-		//try to load and instantiate model
-		if(file_exists($modelpath)){
-	
-			require_once $modelpath;
-			//break name into sections based on a /
-			$parts = explode('/',$name);
-			//use last part of array
-			$modelName = ucwords(end($parts));
-			//instantiate object
-			$model = new $modelName();
-			//return object to controller
-			return $model;
-		} else {
-			$this->_error("Model does not exist: ".$modelpath);
-			return false;
-		}
-	}
-
 	private function exist_params()
 	{
 		$vars = array();
@@ -127,28 +94,92 @@ class Controller
 		return $vars;
 	}
 	
+	private function _parse_str_ext($to_parse)
+	{
+		$vars = array();
+		foreach (explode('&', $to_parse) as $pair)
+		{
+			// pull out the names and the values
+			list($key, $value) = explode('=', $pair);
+	
+			// escape empty value
+			if('' == trim($value)) {
+				continue;
+			}
+			// change param name to lower-case
+			$key = strtolower($key);
+	
+			// decode the variable name and look for arrays
+			$arr = $this->multi_explode(array("[","]"), urldecode($key));
+			$key = isset($arr[0]) ? $arr[0] : NULL;
+			$index = isset($arr[1]) ? $arr[1] : NULL;
+				
+			if( !array_key_exists($key, $vars) ) {
+				$vars[$key] = array();
+			}
+	
+			// arrays
+			if ( isset($index) ) {
+				// associative array
+				if( $index != "" ) {
+					$vars[$key][$index] = $this->get_content($value);
+				}
+				// ordered array
+				else {
+					$vars[$key][] = $this->get_content($value);
+				}
+			}
+			// Variables
+			else {
+				if ( empty($vars[$key]) ) {
+					$vars[$key] = $this->get_content($value);
+				} else {
+					// sample variable came twice should insert into array
+					if ( !is_array($vars[$key]) ) {
+						$tmp = $vars[$key];
+						$vars[$key] = array();
+						array_push($vars[$key], $tmp);
+					}
+					array_push($vars[$key], $this->get_content($value));
+				}
+			}
+		}
+		return $vars;
+	}
+	
+	private function multi_explode ($delimiters, $string) {
+		$ready = str_replace($delimiters, $delimiters[0], $string);
+		$launch = explode($delimiters[0], $ready);
+		return  $launch;
+	}
+	
 	private function get_content($content = NULL)
 	{
-		if ( is_numeric( $content ) ) {
-			return preg_replace("@([^0-9\-])@Ui", "", $content);
-		} else if ( is_bool( $content ) ) {
-			return ( $content ? true : false);
-		} else if ( is_float( $content ) ) {
-			return preg_replace("@([^0-9\,\.\+\-])@Ui", "", $content);
-		} else if ( is_string( $content ) ) {
-			if(filter_var ($content, FILTER_VALIDATE_URL))
-				return $content;
-			else if(filter_var ($content, FILTER_VALIDATE_EMAIL))
-				return $content;
-			else if(filter_var ($content, FILTER_VALIDATE_IP))
-				return $content;
-			else if(filter_var ($content, FILTER_VALIDATE_FLOAT))
-				return $content;
-			else
-				return preg_replace("@([^a-zA-Z0-9\+\-\_\*\@\$\!\;\.\?\#\:\=\%\/\ ]+)@Ui", "", $content);
-		}
-		else false;
+		//  addslashes(urldecode($value));
+		return urldecode($content);
+// 		if ( is_numeric( $content ) ) {
+// 			return preg_replace("@([^0-9\-])@Ui", "", $content);
+// 		} else if ( is_bool( $content ) ) {
+// 			return ( $content ? true : false);
+// 		} else if ( is_float( $content ) ) {
+// 			return preg_replace("@([^0-9\,\.\+\-])@Ui", "", $content);
+// 		} else if ( is_string( $content ) ) {
+// 			if(filter_var ($content, FILTER_VALIDATE_URL))
+// 				return $content;
+// 			else if(filter_var ($content, FILTER_VALIDATE_EMAIL))
+// 				return $content;
+// 			else if(filter_var ($content, FILTER_VALIDATE_IP))
+// 				return $content;
+// 			else if(filter_var ($content, FILTER_VALIDATE_FLOAT))
+// 				return $content;
+// 			else
+// 				return preg_replace("@([^a-zA-Z0-9\+\-\_\*\@\$\!\;\.\?\#\:\=\%\/\ ]+)@Ui", "", $content);
+// 		}
+// 		else false;
 	}
+	
+	
+	
 	
 	
 	

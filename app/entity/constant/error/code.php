@@ -1,0 +1,8 @@
+<?php
+class Code
+{
+	const PARAM_ERROR_NO_PEAK_DATA = 400001;
+	const PARAM_ERROR_ILLEGAL_CUTOFF = 400002;
+	const PARAM_ERROR_ILLEGAL_PEAK = 400003;
+}
+?>

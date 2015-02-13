@@ -19,7 +19,8 @@ class Compound_Name_Model extends Model
 	
 	public function drop_table()
 	{
-		$sql = "DROP TABLE `" . Compound_Model::TABLE . "`";
+		$sql = "DROP TABLE `" . Compound_Name_Model::TABLE . "`";
+// 		$sql = "SET FOREIGN_KEY_CHECKS=0;DROP TABLE `" . Compound_Name_Model::TABLE . "`; SET FOREIGN_KEY_CHECKS=1;";
 		$this->_db->execute($sql);
 	}
 	

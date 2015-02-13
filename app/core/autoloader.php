@@ -12,7 +12,22 @@ function autoloader($class) {
 		require $filename;
 	}
 	
-	$filename = APP . "/util/" . strtolower ( $class ) . ".php";
+	$filename = APP . "/exception/" . strtolower ( $class ) . ".php";
+	if (file_exists ( $filename )) {
+		require $filename;
+	}
+	
+	$filename = APP . "/model/util/" . strtolower ( $class ) . ".php";
+	if (file_exists ( $filename )) {
+		require $filename;
+	}
+	
+	$filename = APP . "/model/service/" . strtolower ( $class ) . ".php";
+	if (file_exists ( $filename )) {
+		require $filename;
+	}
+	
+	$filename = APP . "/entity/param/" . strtolower ( $class ) . ".php";
 	if (file_exists ( $filename )) {
 		require $filename;
 	}

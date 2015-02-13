@@ -10,6 +10,21 @@ class Ms_Model extends Model
 		parent::__construct();
 	}
 	
+	public function get_ms_by_type($type)
+	{
+		$sql = "SELECT * FROM " . Ms_Model::TABLE . " WHERE MS_TYPE = :type";
+		$parameters = array(':type' => $type);
+		return $this->_db->unique_result($sql, $parameters);
+	}
+	
+	public function get_ms_list_by_types($types = NULL)
+	{
+		$sql = "SELECT * FROM " . Ms_Model::TABLE . " WHERE MS_TYPE in ('" . implode("','", $types) . "')";
+		return $this->_db->list_result($sql);
+	}
+	
+	// manipulation
+	
 	public function delete_all()
 	{
 // 		$sql = "TRUNCATE TABLE `" . Ms_Model::TABLE . "`"; // very quickly than DELETE FROM TABLE
@@ -20,6 +35,7 @@ class Ms_Model extends Model
 	public function drop_table()
 	{
 		$sql = "DROP TABLE `" . Ms_Model::TABLE . "`";
+// 		$sql = "SET FOREIGN_KEY_CHECKS=0;DROP TABLE `" . Ms_Model::TABLE . "`; SET FOREIGN_KEY_CHECKS=1;";
 		$this->_db->execute($sql);
 	}
 	
@@ -38,19 +54,6 @@ class Ms_Model extends Model
 		$sql = "INSERT INTO " . Ms_Model::TABLE . " (MS_TYPE) VALUES (:type)";
 		$parameters = array(':type' => $type);
 		$this->_db->execute($sql, $parameters);
-	}
-	
-	public function get_ms_by_type($type)
-	{
-		$sql = "SELECT * FROM " . Ms_Model::TABLE . " WHERE MS_TYPE = :type";
-		$parameters = array(':type' => $type);
-		return $this->_db->uniqueResult($sql, $parameters);
-	}
-	
-	public function get_ms_list_by_types($types = NULL)
-	{
-		$sql = "SELECT * FROM " . Ms_Model::TABLE . " WHERE MS_TYPE in ('" . implode("','", $types) . "')";
-		return $this->_db->listResult($sql);
 	}
 	
 }
