@@ -11,9 +11,6 @@ class Quick_Search_Keyword_Model extends Abstract_Search_Model
 	
 	public function index($params)
 	{
-		$ion_mode = $params->get_ion_mode();
-		$instrument_types = $params->get_instrument_types();
-		$ms_types = $params->get_ms_types();
 		$compound_name_term = $params->get_compound_name_term();
 		$exact_mass = $params->get_exact_mass();
 		$tolerance = $params->get_tolerance();
@@ -21,30 +18,25 @@ class Quick_Search_Keyword_Model extends Abstract_Search_Model
 		$op1 = $params->get_op1();
 		$op2 = $params->get_op2();
 		
+		$instrument_types = $params->get_instrument_types();
+		$ms_types = $params->get_ms_types();
+		$ion_mode = $params->get_ion_mode();
+		$start = $params->get_start();
+		$size = $params->get_num();
+		
 		$this->_compound_model = $this->get_compound_model();
 		
+		// compound name term
+		$compound_name_term = $this->get_mysql_safe_term($compound_name_term);
+		
+		// formula term
+		$formula_term = $this->get_mysql_safe_term($formula_term);
+		
+		// instrument ids by types
 		$instrument_ids = $this->get_instance_ids_by_types($instrument_types);
-		$ms_type_ids = $this->get_ms_type_ids_by_types($ms_types);
 		
-// 		// instrument ids
-// 		if ( !empty($instrument_types) && sizeof($instrument_types) >= 0 ) {
-// 			if ( !in_array('all', $instrument_types) ) { // is not all instruments
-// 				$instruments = $this->_instrument_model->get_instruments_by_types($instrument_types);
-// 				foreach ($instruments as $instrument) {
-// 					array_push($instrument_ids, $instrument['INSTRUMENT_ID']);
-// 				}
-// 			}
-// 		}
-		
-// 		// ms type ids
-// 		if ( !empty($ms_types) && sizeof($ms_types) >= 0 ) {
-// 			if ( !in_array('all', $ms_types) ) { // is not all instruments
-// 				$ms_list = $this->_ms_model->get_ms_list_by_types($ms_types);
-// 				foreach ($ms_list as $ms_item) {
-// 					array_push($ms_type_ids, $ms_item['MS_ID']);
-// 				}
-// 			}
-// 		}
+		// mass spectrometry ids by types
+		$ms_type_ids = $this->get_ms_type_ids_by_names($ms_types);
 		
 		// mz1 & mz2
 		$mz1 = NULL;
@@ -55,15 +47,15 @@ class Quick_Search_Keyword_Model extends Abstract_Search_Model
 			$mz2 = $exact_mass + $tolerance + 0.00001;
 		}
 		
-		// formula term
-		if ( !empty($formula_term) ) {
-			$formula_term = str_replace("*", "%", $formula_term);
-		}
-		
 		$compounds = $this->_compound_model->get_keyword_search_compounds(
-				$compound_name_term, $mz1, $mz2, $formula_term, $op1, $op2,
-				$ion_mode, $instrument_ids, $ms_type_ids);
+				$compound_name_term, $formula_term, $mz1, $mz2, $op1, $op2,
+				$ion_mode, $instrument_ids, $ms_type_ids, $start, $size);
 		
+		return $this->get_output($compounds);
+	}
+	
+	private function get_output($compounds = NULL)
+	{
 		if ( !empty($compounds) ) {
 			foreach ($compounds as $compound)
 			{

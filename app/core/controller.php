@@ -60,17 +60,11 @@ class Controller
 		return $this->_parse_str_ext($_SERVER['QUERY_STRING']);
 	}
 	
-	protected function to_json($data = NULL) {
-		$result = array();
-		if ( !empty($data) ) {
-			$result['data'] = $data;
-			$result['success'] = true;
-		} else {
-			$result['success'] = false;
-		}
-		return json_encode($result);
+	protected function _success($data)
+	{
+		$this->view->render('search/success', $data);
+		die;
 	}
-	
 	//Display an error page if nothing exists
 	protected function _error($error)
 	{
@@ -103,7 +97,7 @@ class Controller
 			list($key, $value) = explode('=', $pair);
 	
 			// escape empty value
-			if('' == trim($value)) {
+			if ( '' == trim($value) ) {
 				continue;
 			}
 			// change param name to lower-case

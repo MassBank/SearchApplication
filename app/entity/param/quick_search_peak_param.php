@@ -6,10 +6,8 @@ class Quick_Search_Peak_Param extends Abstract_Search_Param
 				 + "&CUTOFF=" + pCutoff + "&NUM=0&VAL=" + paramPeak.toString();
 				 */
 	private $_val 	= "";
-	private $_start 	= 1;
-	private $_num		= 0;
 	private $_floor		= 1;
-	private $_celing	= 1000;
+	private $_ceiling	= 1000;
 	private $_threshold	= 3;
 	private $_cutoff	= 20;
 	private $_tolerance	= 0.3;
@@ -30,26 +28,6 @@ class Quick_Search_Peak_Param extends Abstract_Search_Param
 		}
 	}
 	
-	public function get_start(){
-		return $this->_start;
-	}
-	
-	public function set_start($_start){
-		if (isset($_start)) {
-			$this->_start = $_start;
-		}
-	}
-	
-	public function get_num(){
-		return $this->_num;
-	}
-	
-	public function set_num($_num){
-		if (isset($_num)) {
-			$this->_num = $_num;
-		}
-	}
-	
 	public function get_floor(){
 		return $this->_floor;
 	}
@@ -60,13 +38,13 @@ class Quick_Search_Peak_Param extends Abstract_Search_Param
 		}
 	}
 	
-	public function get_celing(){
-		return $this->_celing;
+	public function get_ceiling(){
+		return $this->_ceiling;
 	}
 	
-	public function set_celing($_celing){
-		if (isset($_celing)) {
-			$this->_celing = $_celing;
+	public function set_ceiling($_ceiling){
+		if (isset($_ceiling)) {
+			$this->_ceiling = $_ceiling;
 		}
 	}
 	

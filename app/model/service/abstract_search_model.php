@@ -10,6 +10,15 @@ abstract class Abstract_Search_Model extends Model
 		$this->_ms_model = $this->get_ms_model();
 	}
 	
+	protected function get_mysql_safe_term($term)
+	{
+		if ( !empty($term) ) {
+			$result = str_replace("*", "%", $term);
+			return $result;
+		}
+		return $term;
+	}
+	
 	protected function get_instance_ids_by_types($instrument_types)
 	{
 		$instrument_ids = array();
@@ -24,14 +33,14 @@ abstract class Abstract_Search_Model extends Model
 		return $instrument_ids;
 	}
 	
-	protected function get_ms_type_ids_by_types($ms_types)
+	protected function get_ms_type_ids_by_names($ms_type_names)
 	{
 		$ms_type_ids = array();
-		if ( !empty($ms_types) && sizeof($ms_types) >= 0 ) {
-			if ( !in_array('all', $ms_types) ) { // is not all instruments
-				$ms_list = $this->_ms_model->get_ms_list_by_types($ms_types);
+		if ( !empty($ms_type_names) && sizeof($ms_type_names) >= 0 ) {
+			if ( !in_array('all', $ms_type_names) ) { // is not all instruments
+				$ms_list = $this->_ms_model->get_ms_list_by_types($ms_type_names);
 				foreach ($ms_list as $ms_item) {
-					array_push($ms_type_ids, $ms_item['MS_ID']);
+					array_push($ms_type_ids, $ms_item['MS_TYPE_ID']);
 				}
 			}
 		}

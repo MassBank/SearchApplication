@@ -3,7 +3,7 @@
 class Ms_Model extends Model
 {
 	
-	const TABLE = "MASS_SPECTROMETRY";
+	const TABLE = "MS_TYPE";
 	
 	public function __construct()
 	{
@@ -12,14 +12,14 @@ class Ms_Model extends Model
 	
 	public function get_ms_by_type($type)
 	{
-		$sql = "SELECT * FROM " . Ms_Model::TABLE . " WHERE MS_TYPE = :type";
+		$sql = "SELECT * FROM " . Ms_Model::TABLE . " WHERE " . Column::MS_TYPE_NAME . " = :type";
 		$parameters = array(':type' => $type);
 		return $this->_db->unique_result($sql, $parameters);
 	}
 	
 	public function get_ms_list_by_types($types = NULL)
 	{
-		$sql = "SELECT * FROM " . Ms_Model::TABLE . " WHERE MS_TYPE in ('" . implode("','", $types) . "')";
+		$sql = "SELECT * FROM " . Ms_Model::TABLE . " WHERE " . Column::MS_TYPE_NAME . " in ('" . implode("','", $types) . "')";
 		return $this->_db->list_result($sql);
 	}
 	
@@ -42,16 +42,16 @@ class Ms_Model extends Model
 	public function create_table_if_not_exists()
 	{
 		$sql = "CREATE TABLE IF NOT EXISTS `" . Ms_Model::TABLE . "` (
-					`MS_ID` INT(5) AUTO_INCREMENT NOT NULL,
-					`MS_TYPE` VARCHAR(10) NOT NULL,
-					PRIMARY KEY (`MS_ID`)) 
+					`MS_TYPE_ID` INT(5) AUTO_INCREMENT NOT NULL,
+					`MS_TYPE_NAME` VARCHAR(10) NOT NULL,
+					PRIMARY KEY (`MS_TYPE_ID`)) 
 				CHARACTER SET utf8 COLLATE utf8_general_ci;";
 		$this->_db->execute($sql);
 	}
 	
 	public function insert($type)
 	{
-		$sql = "INSERT INTO " . Ms_Model::TABLE . " (MS_TYPE) VALUES (:type)";
+		$sql = "INSERT INTO " . Ms_Model::TABLE . " (" . Column::MS_TYPE_NAME . ") VALUES (:type)";
 		$parameters = array(':type' => $type);
 		$this->_db->execute($sql, $parameters);
 	}

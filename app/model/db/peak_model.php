@@ -10,6 +10,19 @@ class Peak_Model extends Model
 		parent::__construct();
 	}
 	
+	public function get_high_intesity_peaks_by_range($min_mz, $max_mz, $rel_inte)
+	{
+		$sql = "SELECT " . Column::COMPOUND_ID . " FROM " . self::TABLE . " WHERE (" . Column::PEAK_MZ . " BETWEEN :min_mz AND :max_mz) AND " . Column::PEAK_RELATIVE_INTENSITY . " > :rel_inte";
+// 		$sql = "SELECT " . Column::COMPOUND_ID . " FROM " . self::TABLE . " WHERE (" . Column::PEAK_MZ . " BETWEEN " . $min_mz . " AND " . $max_mz . ") AND " . Column::PEAK_RELATIVE_INTENSITY . " > " . $rel_inte;
+// 		echo $sql;
+		$params = array(
+				':rel_inte' => $rel_inte,
+				':min_mz' => $min_mz,
+				':max_mz' => $max_mz
+		);
+		return $this->_db->list_result($sql, $params);
+	}
+	
 	public function get_peaks_by_compound_id($compound_id, $mz_filters)
 	{
 		$num_of_mz = sizeof($mz_filters);

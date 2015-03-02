@@ -103,9 +103,9 @@ class Data_Model extends Model {
 					$peak_line = trim($line);
 					$peak_reads = explode(" ", $peak_line);
 					$tbl_peaks[] = array(
-							Column::PEAK_MZ => $peak_reads[0],
-							Column::PEAK_INTENSITY => $peak_reads[1],
-							Column::PEAK_RELATIVE_INTENSITY => $peak_reads[2]
+						Column::PEAK_MZ => $peak_reads[0],
+						Column::PEAK_INTENSITY => $peak_reads[1],
+						Column::PEAK_RELATIVE_INTENSITY => $peak_reads[2]
 					);
 				}
 				if (!$this->startwith($line, Keyword::BLANK)) {
@@ -136,7 +136,7 @@ class Data_Model extends Model {
 					$tbl_compound[Column::COMPOUND_FORMULA],
 					$tbl_compound[Column::COMPOUND_EXACT_MASS],
 					$tbl_compound[Column::COMPOUND_ION_MODE],
-					$ms[Column::MS_ID],
+					$ms[Column::MS_TYPE_ID],
 					$instrument[Column::INSTRUMENT_ID]
 			);
 				

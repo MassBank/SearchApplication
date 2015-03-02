@@ -266,7 +266,7 @@ class Quick_Search_Peak_Model extends Abstract_Search_Model
 	private function _get_target_ids($ion_mode, $instrument_types, $ms_types)
 	{
 		$compounds = array();
-		$ms_type_ids = $this->get_ms_type_ids_by_types($ms_types);
+		$ms_type_ids = $this->get_ms_type_ids_by_names($ms_types);
 		$instance_ids = $this->get_instance_ids_by_types($instrument_types);
 		$compounds = $this->_compound_model->get_compounds_by_ion_mode($ion_mode, $instrument_types, $ms_type_ids);
 		

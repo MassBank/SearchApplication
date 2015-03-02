@@ -13,8 +13,8 @@ class Compound_Model extends Model
 	}
 	
 	public function get_keyword_search_compounds(
-			$compound_name_term, $mz1, $mz2, $formula_term, $op1, $op2,
-			$ion_mode, $instrument_ids, $ms_type_ids)
+			$compound_name_term, $formula_term, $mz1, $mz2, $op1, $op2,
+			$ion_mode, $instrument_ids, $ms_type_ids, $start, $num)
 	{
 		$sb_compound_sql = new String_Builder();
 		$sb_compound_sql->append("SELECT DISTINCT C.COMPOUND_ID, C.TITLE, C.ION_MODE, C.FORMULA, C.EXACT_MASS FROM COMPOUND C");
@@ -35,7 +35,7 @@ class Compound_Model extends Model
 		}
 		// ms
 		if ( !empty($ms_type_ids) ) {
-			array_push($where_clause, "C.MS_ID IN(" . implode(",", $ms_type_ids) . ")");
+			array_push($where_clause, "C.MS_TYPE_ID IN(" . implode(",", $ms_type_ids) . ")");
 		}
 		// compound name
 		if ( !empty($compound_name_term) ) {
@@ -62,7 +62,7 @@ class Compound_Model extends Model
 		}
 	
 		if ( !empty($str_where_clause2) ) {
-			array_push($where_clause, $str_where_clause2);
+			array_push($where_clause, "(" . $str_where_clause2 . ")");
 		}
 	
 		// join
@@ -70,25 +70,35 @@ class Compound_Model extends Model
 			$sb_compound_sql->append(" WHERE ");
 			$sb_compound_sql->append(implode(" AND ", $where_clause));
 		}
+		
+		if ( $start >= 0 && $num > 0) {
+			$sb_compound_sql->append(" LIMIT " . $start . ", " . $num);
+		}
 	
 		$sql = $sb_compound_sql->to_string();
-		// 		echo $sql;
+		// echo $sql;
 		return $this->_db->list_result($sql);
 	}
 	
 	public function get_compound_by_id($compound_id)
 	{
-		$sql = "SELECT * FROM COMPOUND C WHERE COMPOUND_ID = :compound_id";
+		$sql = "SELECT * FROM " . self::TABLE . " C WHERE C." . Column::COMPOUND_ID . " = :compound_id";
 		$params = array(
 			":compound_id" => $compound_id
 		);
 		return $this->_db->unique_result($sql, $params);
 	}
 	
-	public function get_compounds_by_ion_mode($ion_mode, $instrument_ids = array(), $ms_ids = array())
+	public function get_compounds_by_ids($compound_ids)
+	{
+		$sql = "SELECT * FROM " . self::TABLE . " C WHERE C." . Column::COMPOUND_ID . " IN('" . implode("','", $compound_ids) . "')";
+		return $this->_db->list_result($sql);
+	}
+	
+	public function get_compounds_by_ion_mode($ion_mode, $instrument_ids = array(), $ms_type_ids = array())
 	{
 		$sb_compound_sql = new String_Builder();
-		$sb_compound_sql->append("SELECT * FROM COMPOUND C WHERE");
+		$sb_compound_sql->append("SELECT * FROM " . self::TABLE . " C WHERE");
 		// ion_mode
 		if ( $ion_mode == 1 ) {
 			$sb_compound_sql->append(" C.ION_MODE > 0");
@@ -100,8 +110,8 @@ class Compound_Model extends Model
 			$sb_compound_sql->append(" C.INSTRUMENT_ID IN(" . implode(",", $instrument_ids) . ")");
 		}
 		// ms_types
-		if ( !empty($ms_ids) ) {
-			$sb_compound_sql->append(" C.MS_ID IN(" . implode(",", $ms_ids) . ")");
+		if ( !empty($ms_type_ids) ) {
+			$sb_compound_sql->append(" C.MS_TYPE_ID IN(" . implode(",", $ms_type_ids) . ")");
 		}
 		// TODO: MS$FOCUSED_ION: PRECURSOR_MZ
 	
@@ -135,28 +145,28 @@ class Compound_Model extends Model
 					`FORMULA` VARCHAR(255),
 					`EXACT_MASS` FLOAT,
 					`ION_MODE` TINYINT,
-					`MS_ID` INT(5) NOT NULL,
+					`MS_TYPE_ID` INT(5) NOT NULL,
 					`INSTRUMENT_ID` INT(11) NOT NULL,
 					PRIMARY KEY (`COMPOUND_ID`),
-					FOREIGN KEY (`MS_ID`) REFERENCES MASS_SPECTROMETRY(`MS_ID`),
+					FOREIGN KEY (`MS_TYPE_ID`) REFERENCES MS_TYPE(`MS_TYPE_ID`),
 					FOREIGN KEY (`INSTRUMENT_ID`) REFERENCES INSTRUMENT(`INSTRUMENT_ID`)
 				)
 				CHARACTER SET utf8 COLLATE utf8_general_ci";
 		$this->_db->execute($sql);
 	}
 	
-	public function insert($compound_id, $title, $formula, $exact_mass, $ion_mode, $ms_id, $instrument_id)
+	public function insert($compound_id, $title, $formula, $exact_mass, $ion_mode, $ms_type_id, $instrument_id)
 	{
 		$sql = "INSERT INTO " . Compound_Model::TABLE . " (
-				COMPOUND_ID, TITLE, FORMULA, EXACT_MASS, ION_MODE, MS_ID, INSTRUMENT_ID
-				) VALUES (:compound_id, :title, :formula, :exact_mass, :ion_mode, :ms_id, :instrument_id)";
+				COMPOUND_ID, TITLE, FORMULA, EXACT_MASS, ION_MODE, MS_TYPE_ID, INSTRUMENT_ID
+				) VALUES (:compound_id, :title, :formula, :exact_mass, :ion_mode, :ms_type_id, :instrument_id)";
 		$parameters = array(
 				':compound_id' => $compound_id, 
 				':title' => $title, 
 				':formula' => $formula, 
 				':exact_mass' => $exact_mass, 
 				':ion_mode' => $ion_mode, 
-				':ms_id' => $ms_id, 
+				':ms_type_id' => $ms_type_id, 
 				':instrument_id' => $instrument_id);
 		$this->_db->execute($sql, $parameters);
 	}

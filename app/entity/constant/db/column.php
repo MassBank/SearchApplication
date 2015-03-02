@@ -14,8 +14,8 @@ class Column
 	const INSTRUMENT_ID = "INSTRUMENT_ID";
 	const INSTRUMENT_TYPE = "INSTRUMENT_TYPE";
 	
-	const MS_ID = "MS_ID";
-	const MS_TYPE = "MS_TYPE";
+	const MS_TYPE_ID = "MS_TYPE_ID";
+	const MS_TYPE_NAME = "MS_TYPE_NAME";
 	
 	const PEAK_ID = "PEAK_ID";
 	const PEAK_MZ = "MZ";
