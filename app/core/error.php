@@ -13,10 +13,13 @@ class Error extends Controller {
 // 		$error_code = $this->_error["ERROR_CODE"];
 // 		$error_msg = $this->_error["ERROR_MESSAGE"];
 		
-		$http_status_code = $this->_error->get_http_status_code();
-		$data['http_status_code'] = $http_status_code;
+		$http_status_code = NULL;
 		$data['error_message'] = $this->_error->getMessage();
+		if (method_exists($this->_error,'get_http_status_code')) {
+			$data['http_status_code'] = $this->_error->get_http_status_code();
+		}
 		$data['error_code'] = $this->_error->getCode();
+		$http_status_code = $http_status_code ? : 404;
 		
 		$this->view->render('error/' . $http_status_code, $data);
 		

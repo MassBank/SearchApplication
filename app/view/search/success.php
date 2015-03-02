@@ -1,6 +1,6 @@
 <?php
 	$result = array();
-	$result['success'] = false;
+	$result['success'] = true;
 	$result['data'] = $data;
 	echo json_encode($result);
 ?>
