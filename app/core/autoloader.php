@@ -34,8 +34,23 @@ function autoloader($class) {
 	
 }
 
+function massbank_error_handler($num, $str, $file, $line, $context = null)
+{
+	// more: http://php.net/manual/en/function.set-error-handler.php
+	
+    if (!(error_reporting() & $num)) {
+        // This error code is not included in error_reporting
+        return;
+    }
+    
+	require APP . '/core/error.php';
+	$_controller = new Error(new ErrorException( $str, 1000001, $num, $file, $line ));
+	$_controller->index();
+	die;
+}
 // run autoloader
 spl_autoload_register ( 'autoloader' );
+set_error_handler( 'massbank_error_handler' );
 
 require_once APP . '/config/config.php';
 
