@@ -1,6 +1,8 @@
 <?php
+	include_once APP . 'view/common/response.php';
+
 	$result = array();
 	$result['success'] = true;
 	$result['data'] = $data;
-	echo json_encode($result);
+	show_response( $result );
 ?>
