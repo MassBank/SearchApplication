@@ -13,13 +13,44 @@ class Peak_Model extends Model
 	public function get_high_intesity_peaks_by_range($min_mz, $max_mz, $rel_inte)
 	{
 		$sql = "SELECT " . Column::COMPOUND_ID . " FROM " . self::TABLE . " WHERE (" . Column::PEAK_MZ . " BETWEEN :min_mz AND :max_mz) AND " . Column::PEAK_RELATIVE_INTENSITY . " > :rel_inte";
-// 		$sql = "SELECT " . Column::COMPOUND_ID . " FROM " . self::TABLE . " WHERE (" . Column::PEAK_MZ . " BETWEEN " . $min_mz . " AND " . $max_mz . ") AND " . Column::PEAK_RELATIVE_INTENSITY . " > " . $rel_inte;
-// 		echo $sql;
 		$params = array(
 				':rel_inte' => $rel_inte,
 				':min_mz' => $min_mz,
 				':max_mz' => $max_mz
 		);
+		return $this->_db->list_result($sql, $params);
+	}
+	
+// 	public function get_high_intesity_peaks_diff_by_range($min_mz, $max_mz, $rel_inte)
+// 	{
+// 		$sb_sql = new String_Builder();
+// 		$sb_sql->append("SELECT " . Column::COMPOUND_ID . " from " . self::TABLE . " ");
+// 		$sb_sql->append("WHERE " . Column::PEAK_RELATIVE_INTENSITY . " > :rel_inte ");
+// 		$sb_sql->append("GROUP BY " . Column::COMPOUND_ID . " ");
+// 		$sb_sql->append("HAVING MIN(" . Column::PEAK_MZ . ") <= :max_mz AND MAX(" . Column::PEAK_MZ . ") >= :min_mz");
+// 		$params = array(
+// 				':rel_inte' => $rel_inte,
+// 				':min_mz' => $min_mz,
+// 				':max_mz' => $max_mz
+// 		);
+// 		$sql = $sb_sql->to_string();
+// 		return $this->_db->list_result($sql, $params);
+// 	}
+	
+	public function get_high_intesity_peaks_diff_by_range($min_mz, $max_mz, $rel_inte)
+	{
+		$sb_sql = new String_Builder();
+		$sb_sql->append("SELECT t1." . Column::COMPOUND_ID . " FROM " . self::TABLE . " AS t1 LEFT JOIN " . self::TABLE . " AS t2 ");
+		$sb_sql->append("ON t1." . Column::COMPOUND_ID . " = t2." . Column::COMPOUND_ID . " ");
+		$sb_sql->append("WHERE ");
+		$sb_sql->append("(t1." . Column::PEAK_MZ . " BETWEEN t2." . Column::PEAK_MZ . " + :min_mz AND t2." . Column::PEAK_MZ . " + :max_mz) ");
+		$sb_sql->append("AND t1." . Column::PEAK_RELATIVE_INTENSITY . " > :rel_inte AND t2." . Column::PEAK_RELATIVE_INTENSITY . " > :rel_inte");
+		$params = array(
+				':rel_inte' => $rel_inte,
+				':min_mz' => $min_mz,
+				':max_mz' => $max_mz
+		);
+		$sql = $sb_sql->to_string();
 		return $this->_db->list_result($sql, $params);
 	}
 	

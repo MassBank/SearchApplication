@@ -21,6 +21,7 @@ class Search extends Controller
 	// peak search - peak_by_mz
 	const PARAM_FORMULA_LIST = 'formula';
 	const PARAM_MZ_LIST = 'mz';
+	const PARAM_MZ_DIFF_LIST = 'm_diff';
 	const PARAM_REL_INTE = 'rel_inte';
 	// common
 	const PARAM_INSTRUMENT = 'inst';
@@ -134,8 +135,9 @@ class Search extends Controller
 			}
 			
 // 			$this->view->rendertemplate('header');
-			$this->view->render('search/body', $data);
+// 			$this->view->render('search/body', $data);
 // 			$this->view->rendertemplate('footer');
+			$this->_success($data);
 		} catch ( Exception $e ) {
 			$this->_error($e);
 		}
@@ -303,11 +305,13 @@ class Search extends Controller
 		$result->set_mz_list($this->GET_PARAM(self::PARAM_MZ_LIST, $params));
 		$result->set_formula_list($this->GET_PARAM(self::PARAM_FORMULA_LIST, $params));
 		$result->set_rel_inte($this->GET_PARAM(self::PARAM_REL_INTE, $params)?:self::PARAM_REL_INTE_DEFAULT);
-		$result->set_instrument_types($this->GET_PARAM(self::PARAM_INSTRUMENT, $params));
-		$result->set_ms_types($this->GET_PARAM(self::PARAM_MS_TYPE, $params));
-		$result->set_ion_mode($this->GET_PARAM(self::PARAM_ION_MODE, $params));
-		$result->set_start($this->GET_PARAM(self::PARAM_START, $params)?:self::PARAM_START_DEFAULT);
-		$result->set_num($this->GET_PARAM(self::PARAM_NUM, $params)?:self::PARAM_NUM_DEFAULT);
+		$this->_get_common_search_params($result, $params);
+		
+// 		$result->set_instrument_types($this->GET_PARAM(self::PARAM_INSTRUMENT, $params));
+// 		$result->set_ms_types($this->GET_PARAM(self::PARAM_MS_TYPE, $params));
+// 		$result->set_ion_mode($this->GET_PARAM(self::PARAM_ION_MODE, $params));
+// 		$result->set_start($this->GET_PARAM(self::PARAM_START, $params)?:self::PARAM_START_DEFAULT);
+// 		$result->set_num($this->GET_PARAM(self::PARAM_NUM, $params)?:self::PARAM_NUM_DEFAULT);
 // 		print_r($result);
 		return $result;
 	}
@@ -316,6 +320,17 @@ class Search extends Controller
 	{
 		$params = $this->parse_query_str();
 		$result = new Peak_Search_Diff_By_Mz_Param();
+		$result->set_mz_diff_list($this->GET_PARAM(self::PARAM_MZ_DIFF_LIST, $params));
+		$result->set_formula_list($this->GET_PARAM(self::PARAM_FORMULA_LIST, $params));
+		$result->set_rel_inte($this->GET_PARAM(self::PARAM_REL_INTE, $params)?:self::PARAM_REL_INTE_DEFAULT);
+		$this->_get_common_search_params($result, $params);
+		
+// 		$result->set_instrument_types($this->GET_PARAM(self::PARAM_INSTRUMENT, $params));
+// 		$result->set_ms_types($this->GET_PARAM(self::PARAM_MS_TYPE, $params));
+// 		$result->set_ion_mode($this->GET_PARAM(self::PARAM_ION_MODE, $params));
+// 		$result->set_start($this->GET_PARAM(self::PARAM_START, $params)?:self::PARAM_START_DEFAULT);
+// 		$result->set_num($this->GET_PARAM(self::PARAM_NUM, $params)?:self::PARAM_NUM_DEFAULT);
+// 		print_r($result);
 		return $result;
 	}
 
@@ -330,6 +345,16 @@ class Search extends Controller
 	{
 		$params = $this->parse_query_str();
 		$result = new Peak_Search_Diff_By_Formula_Param();
+		return $result;
+	}
+	
+	private function _get_common_search_params($result, $params)
+	{
+		$result->set_instrument_types($this->GET_PARAM(self::PARAM_INSTRUMENT, $params));
+		$result->set_ms_types($this->GET_PARAM(self::PARAM_MS_TYPE, $params));
+		$result->set_ion_mode($this->GET_PARAM(self::PARAM_ION_MODE, $params));
+		$result->set_start($this->GET_PARAM(self::PARAM_START, $params)?:self::PARAM_START_DEFAULT);
+		$result->set_num($this->GET_PARAM(self::PARAM_NUM, $params)?:self::PARAM_NUM_DEFAULT);
 		return $result;
 	}
 	
