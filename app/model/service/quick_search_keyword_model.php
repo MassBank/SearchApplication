@@ -47,24 +47,24 @@ class Quick_Search_Keyword_Model extends Abstract_Search_Model
 			$mz2 = $exact_mass + $tolerance + 0.00001;
 		}
 		
-		$compounds = $this->_compound_model->get_keyword_search_compounds(
+		$compounds = $this->_compound_model->get_compounds_by_keywords(
 				$compound_name_term, $formula_term, $mz1, $mz2, $op1, $op2,
 				$ion_mode, $instrument_ids, $ms_type_ids, $start, $size);
 		
 		return $this->get_output($compounds);
 	}
 	
-	private function get_output($compounds = NULL)
+	protected function get_output($compounds = NULL)
 	{
 		if ( !empty($compounds) ) {
 			foreach ($compounds as $compound)
 			{
 				$data[] = array(
-						'compound_id' => $compound[Column::COMPOUND_ID],
-						'title' => $compound[Column::COMPOUND_TITLE],
-						'ion_mode' => $compound[Column::COMPOUND_ION_MODE],
-						'formula' => $compound[Column::COMPOUND_FORMULA],
-						'exact_mass' => $compound[Column::COMPOUND_EXACT_MASS]
+					'compound_id' => $compound[Column::COMPOUND_ID],
+					'title' => $compound[Column::COMPOUND_TITLE],
+					'ion_mode' => $compound[Column::COMPOUND_ION_MODE],
+					'formula' => $compound[Column::COMPOUND_FORMULA],
+					'exact_mass' => $compound[Column::COMPOUND_EXACT_MASS]
 				);
 			}
 		} else {

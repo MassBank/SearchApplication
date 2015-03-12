@@ -64,17 +64,17 @@ class Peak_Search_Peak_By_Mz_Model extends Abstract_Search_Model
 		return $this->get_output($compounds);
 	}
 	
-	private function get_output($compounds = NULL)
+	protected function get_output($compounds = NULL)
 	{
 		if ( !empty($compounds) ) {
 			foreach ($compounds as $compound)
 			{
 				$data[] = array(
-						'compound_id' => $compound[Column::COMPOUND_ID],
-						'title' => $compound[Column::COMPOUND_TITLE],
-						'ion_mode' => $compound[Column::COMPOUND_ION_MODE],
-						'formula' => $compound[Column::COMPOUND_FORMULA],
-						'exact_mass' => $compound[Column::COMPOUND_EXACT_MASS]
+					'compound_id' => $compound[Column::COMPOUND_ID],
+					'title' => $compound[Column::COMPOUND_TITLE],
+					'ion_mode' => $compound[Column::COMPOUND_ION_MODE],
+					'formula' => $compound[Column::COMPOUND_FORMULA],
+					'exact_mass' => $compound[Column::COMPOUND_EXACT_MASS]
 				);
 			}
 		} else {

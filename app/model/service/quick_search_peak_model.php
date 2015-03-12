@@ -33,7 +33,7 @@ class Quick_Search_Peak_Model extends Abstract_Search_Model
 			return 0;
 		}
 		$this->_set_score($params);
-		return $this->_out_result();
+		return $this->get_output();
 	}
 	
 	private function _set_query_peak($params)
@@ -242,27 +242,6 @@ class Quick_Search_Peak_Model extends Abstract_Search_Model
 		}
 	}
 	
-	private function _out_result()
-	{
-		$result = array();
-		foreach ($this->score_list as $score)
-		{
-			$compound_id = $score["compound_id"];
-			$compound = $this->_compound_model->get_compound_by_id($compound_id);
-			if ( !empty($compound) ) 
-			{
-				array_push($result, array(
-					"compound_id" => $compound_id,
-					"title" => $compound["TITLE"],
-					"score" => $score["score"],
-					"ion_mode" => $compound["ION_MODE"],
-					"formula" => $compound["FORMULA"]
-				));
-			}
-		}
-		return $result;
-	}
-	
 	private function _get_target_ids($ion_mode, $instrument_types, $ms_types)
 	{
 		$compounds = array();
@@ -276,6 +255,27 @@ class Quick_Search_Peak_Model extends Abstract_Search_Model
 			array_push($compound_ids, $compound[Column::COMPOUND_ID]);
 		}
 		return $compound_ids;
+	}
+	
+	protected function get_output()
+	{
+		$result = array();
+		foreach ($this->score_list as $score)
+		{
+			$compound_id = $score["compound_id"];
+			$compound = $this->_compound_model->get_compound_by_id($compound_id);
+			if ( !empty($compound) ) 
+			{
+				array_push($result, array(
+					"compound_id" => $compound[Column::COMPOUND_ID],
+					"title" => $compound[Column::COMPOUND_TITLE],
+					"score" => $score["score"],
+					"ion_mode" => $compound[Column::COMPOUND_ION_MODE],
+					"formula" => $compound[Column::COMPOUND_FORMULA]
+				));
+			}
+		}
+		return $result;
 	}
 	
 }

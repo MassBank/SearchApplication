@@ -12,7 +12,7 @@ class Compound_Model extends Model
 		parent::__construct();
 	}
 	
-	public function get_keyword_search_compounds(
+	public function get_compounds_by_keywords(
 			$compound_name_term, $formula_term, $mz1, $mz2, $op1, $op2,
 			$ion_mode, $instrument_ids, $ms_type_ids, $start, $num)
 	{

@@ -46,8 +46,32 @@ class Search extends Controller
 		// index
 		echo "start search index <br/>";
 		
-		$search_model = new Quick_Search_Keyword_Model();
-		echo $search_model->check_term("sample 's");
+		$formula_list = array('coffee', 'brown', 'caffeine');
+		$num = sizeof($formula_list);
+		$where = "";
+		
+		$sql = "SELECT * FROM ";
+		for ($i = 0; $i < $num; $i++) {
+			if ( $formula_list[$i] != '' ) {
+				$sql .= "(SELECT ID FROM PRODUCT_ION WHERE FORMULA='$formula_list[$i]') AS t$i";
+			}
+			if ( $i > 0 ) {
+				$where .= "t" . ($i - 1) . ".ID=t" . $i . ".ID";
+				if ( $i < $num - 1 ) {
+					$where .= " AND ";
+				}
+			}
+			if ( $i < $num - 1 ) {
+				$sql .= ", ";
+			}
+		}
+		if ( $where != '' ) {
+			$sql .= " WHERE $where";
+		}
+		print $sql . "</br>";
+		
+// 		$search_model = new Quick_Search_Keyword_Model();
+// 		echo $search_model->check_term("sample 's");
 		
 // 		echo Common_Util::first_str_replace(" OR A OR B OR C OR ", " OR ", "") . "|" . Common_Util::last_str_replace(" OR A OR B OR C OR ", " OR ", "");
 		
@@ -194,11 +218,7 @@ class Search extends Controller
 		$result->set_formula_term($this->GET_PARAM(self::PARAM_FORMULA, $params));
 		$result->set_op1($this->GET_PARAM(self::PARAM_OP1, $params)?:self::PARAM_OPERATOR);
 		$result->set_op2($this->GET_PARAM(self::PARAM_OP2, $params)?:self::PARAM_OPERATOR);
-		$result->set_instrument_types($this->GET_PARAM(self::PARAM_INSTRUMENT, $params));
-		$result->set_ms_types($this->GET_PARAM(self::PARAM_MS_TYPE, $params));
-		$result->set_ion_mode($this->GET_PARAM(self::PARAM_ION_MODE, $params));
-		$result->set_start($this->GET_PARAM(self::PARAM_START, $params)?:self::PARAM_START_DEFAULT);
-		$result->set_num($this->GET_PARAM(self::PARAM_NUM, $params)?:self::PARAM_NUM_DEFAULT);
+		$this->_get_common_search_params($result, $params);
 		return $result;
 	}
 	
@@ -271,8 +291,7 @@ class Search extends Controller
 			$result->set_cutoff($p_cutoff);
 			$result->set_val($sb_peak->to_string());
 		}
-		$result->set_start($this->GET_PARAM(self::PARAM_START, $params)?:self::PARAM_START_DEFAULT);
-		$result->set_num($this->GET_PARAM(self::PARAM_NUM, $params)?:self::PARAM_NUM_DEFAULT);
+		$this->_get_common_search_params($result, $params);
 		/* GUI supports cutoff param only. */
 // 		$result->set_celing($this->GET_PARAM("CEILING", $params));
 // 		if ( "LINEAR" == $this->GET_PARAM("WEIGHT", $params) ) {
@@ -300,19 +319,11 @@ class Search extends Controller
 	private function _get_params_peak_search_peak_by_mz()
 	{
 		$params = $this->parse_query_str();
-// 		print_r($params);
 		$result = new Peak_Search_Peak_By_Mz_Param();
 		$result->set_mz_list($this->GET_PARAM(self::PARAM_MZ_LIST, $params));
 		$result->set_formula_list($this->GET_PARAM(self::PARAM_FORMULA_LIST, $params));
 		$result->set_rel_inte($this->GET_PARAM(self::PARAM_REL_INTE, $params)?:self::PARAM_REL_INTE_DEFAULT);
 		$this->_get_common_search_params($result, $params);
-		
-// 		$result->set_instrument_types($this->GET_PARAM(self::PARAM_INSTRUMENT, $params));
-// 		$result->set_ms_types($this->GET_PARAM(self::PARAM_MS_TYPE, $params));
-// 		$result->set_ion_mode($this->GET_PARAM(self::PARAM_ION_MODE, $params));
-// 		$result->set_start($this->GET_PARAM(self::PARAM_START, $params)?:self::PARAM_START_DEFAULT);
-// 		$result->set_num($this->GET_PARAM(self::PARAM_NUM, $params)?:self::PARAM_NUM_DEFAULT);
-// 		print_r($result);
 		return $result;
 	}
 
@@ -324,13 +335,6 @@ class Search extends Controller
 		$result->set_formula_list($this->GET_PARAM(self::PARAM_FORMULA_LIST, $params));
 		$result->set_rel_inte($this->GET_PARAM(self::PARAM_REL_INTE, $params)?:self::PARAM_REL_INTE_DEFAULT);
 		$this->_get_common_search_params($result, $params);
-		
-// 		$result->set_instrument_types($this->GET_PARAM(self::PARAM_INSTRUMENT, $params));
-// 		$result->set_ms_types($this->GET_PARAM(self::PARAM_MS_TYPE, $params));
-// 		$result->set_ion_mode($this->GET_PARAM(self::PARAM_ION_MODE, $params));
-// 		$result->set_start($this->GET_PARAM(self::PARAM_START, $params)?:self::PARAM_START_DEFAULT);
-// 		$result->set_num($this->GET_PARAM(self::PARAM_NUM, $params)?:self::PARAM_NUM_DEFAULT);
-// 		print_r($result);
 		return $result;
 	}
 

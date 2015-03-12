@@ -48,8 +48,7 @@ abstract class Model {
 	{
 		$modelpath = strtolower(APP . '/model/db/'.$name.'.php');
 		//try to load and instantiate model
-		if(file_exists($modelpath)){
-	
+		if (file_exists($modelpath)) {
 			require_once $modelpath;
 			//break name into sections based on a /
 			$parts = explode('/',$name);

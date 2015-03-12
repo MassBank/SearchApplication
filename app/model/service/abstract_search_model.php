@@ -10,6 +10,8 @@ abstract class Abstract_Search_Model extends Model
 		$this->_ms_model = $this->get_ms_model();
 	}
 	
+	abstract protected function get_output($compounds = NULL);
+	
 	protected function get_mysql_safe_term($term)
 	{
 		if ( !empty($term) ) {
