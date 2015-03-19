@@ -43,6 +43,21 @@ abstract class Model {
 		return $this->load_db_model('peak_model');
 	}
 	
+	protected function get_product_ion_model()
+	{
+		return $this->load_db_model('product_ion_model');
+	}
+	
+	protected function get_neutral_loss_path_model()
+	{
+		return $this->load_db_model('neutral_loss_path_model');
+	}
+	
+	protected function get_pre_pro_model()
+	{
+		return $this->load_db_model('pre_pro_model');
+	}
+	
 	//function to load model on request
 	private function load_db_model($name)
 	{

@@ -23,6 +23,8 @@ class Search extends Controller
 	const PARAM_MZ_LIST = 'mz';
 	const PARAM_MZ_DIFF_LIST = 'm_diff';
 	const PARAM_REL_INTE = 'rel_inte';
+	// peak search - peak_by_formula
+	const PARAM_MODE = 'mode';
 	// common
 	const PARAM_INSTRUMENT = 'inst';
 	const PARAM_MS_TYPE = 'ms';
@@ -46,29 +48,52 @@ class Search extends Controller
 		// index
 		echo "start search index <br/>";
 		
-		$formula_list = array('coffee', 'brown', 'caffeine');
-		$num = sizeof($formula_list);
-		$where = "";
+		$list = array();
+		if (!isset($list['A'])){
+			$list['A'] = "";
+		}
+		$list['A'] = $list['A'] . 10 . ",";
+		$list['A'] = $list['A'] . 20 . ",";
+		$list['A'] = $list['A'] . 30 . ",";
+		$list['A'] = $list['A'] . 40 . ",";
+		print_r($list);
 		
-		$sql = "SELECT * FROM ";
-		for ($i = 0; $i < $num; $i++) {
-			if ( $formula_list[$i] != '' ) {
-				$sql .= "(SELECT ID FROM PRODUCT_ION WHERE FORMULA='$formula_list[$i]') AS t$i";
-			}
-			if ( $i > 0 ) {
-				$where .= "t" . ($i - 1) . ".ID=t" . $i . ".ID";
-				if ( $i < $num - 1 ) {
-					$where .= " AND ";
-				}
-			}
-			if ( $i < $num - 1 ) {
-				$sql .= ", ";
-			}
-		}
-		if ( $where != '' ) {
-			$sql .= " WHERE $where";
-		}
-		print $sql . "</br>";
+// 		$formula_list = array('coffee', 'brown', 'caffeine');
+// 		$where = "";
+		
+// 		$like = "";
+// 		foreach ( $formula_list as $formula ){
+// 			if ( $formula != '' ) {
+// 				$like .= "%>$formula-";
+// 			}
+// 		}
+// 		$like .= "%";
+// 		$where = "PATH LIKE '$like'";
+// 		$outer_in = "SELECT DISTINCT ID FROM NEUTRAL_LOSS_PATH WHERE $where";
+// 		print $outer_in . "</br>";
+		
+// 		$num = sizeof($formula_list);
+// 		$where = "";
+		
+// 		$sql = "SELECT * FROM ";
+// 		for ($i = 0; $i < $num; $i++) {
+// 			if ( $formula_list[$i] != '' ) {
+// 				$sql .= "(SELECT ID FROM PRODUCT_ION WHERE FORMULA='$formula_list[$i]') AS t$i";
+// 			}
+// 			if ( $i > 0 ) {
+// 				$where .= "t" . ($i - 1) . ".ID=t" . $i . ".ID";
+// 				if ( $i < $num - 1 ) {
+// 					$where .= " AND ";
+// 				}
+// 			}
+// 			if ( $i < $num - 1 ) {
+// 				$sql .= ", ";
+// 			}
+// 		}
+// 		if ( $where != '' ) {
+// 			$sql .= " WHERE $where";
+// 		}
+// 		print $sql . "</br>";
 		
 // 		$search_model = new Quick_Search_Keyword_Model();
 // 		echo $search_model->check_term("sample 's");
@@ -342,6 +367,8 @@ class Search extends Controller
 	{
 		$params = $this->parse_query_str();
 		$result = new Peak_Search_Peak_By_Formula_Param();
+		$result->set_mode($this->GET_PARAM(self::PARAM_MODE, $params)?:"AND");
+		$result->set_formula_list($this->GET_PARAM(self::PARAM_FORMULA_LIST, $params));
 		return $result;
 	}
 
@@ -349,6 +376,8 @@ class Search extends Controller
 	{
 		$params = $this->parse_query_str();
 		$result = new Peak_Search_Diff_By_Formula_Param();
+		$result->set_mode($this->GET_PARAM(self::PARAM_MODE, $params)?:"SEQ");
+		$result->set_formula_list($this->GET_PARAM(self::PARAM_FORMULA_LIST, $params));
 		return $result;
 	}
 	
