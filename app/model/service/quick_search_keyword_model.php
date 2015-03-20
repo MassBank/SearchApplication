@@ -62,15 +62,14 @@ class Quick_Search_Keyword_Model extends Abstract_Search_Model
 				$data[] = array(
 					'compound_id' => $compound[Column::COMPOUND_ID],
 					'title' => $compound[Column::COMPOUND_TITLE],
-					'ion_mode' => $compound[Column::COMPOUND_ION_MODE],
+					'ion_mode' => $this->get_value($compound[Column::COMPOUND_ION_MODE]),
 					'formula' => $compound[Column::COMPOUND_FORMULA],
-					'exact_mass' => $compound[Column::COMPOUND_EXACT_MASS]
+					'exact_mass' => $this->get_value($compound[Column::COMPOUND_EXACT_MASS])
 				);
 			}
 		} else {
 			$data = array();
 		}
-		
 		return $data;
 	}
 	

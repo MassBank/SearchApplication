@@ -49,5 +49,14 @@ abstract class Abstract_Search_Model extends Model
 		return $ms_type_ids;
 	}
 	
+	protected function get_value(&$var)
+	{
+		if ( is_numeric($var) ) {
+			return $var + 0;
+		} else {
+			return $var;
+		}
+	}
+	
 }
 ?>

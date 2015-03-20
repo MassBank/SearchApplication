@@ -269,9 +269,10 @@ class Quick_Search_Peak_Model extends Abstract_Search_Model
 				array_push($result, array(
 					"compound_id" => $compound[Column::COMPOUND_ID],
 					"title" => $compound[Column::COMPOUND_TITLE],
-					"score" => $score["score"],
-					"ion_mode" => $compound[Column::COMPOUND_ION_MODE],
-					"formula" => $compound[Column::COMPOUND_FORMULA]
+					"score" => $this->get_value($score["score"]),
+					"ion_mode" => $this->get_value($compound[Column::COMPOUND_ION_MODE]),
+					"formula" => $compound[Column::COMPOUND_FORMULA],
+					'exact_mass' => $this->get_value($compound[Column::COMPOUND_EXACT_MASS])
 				));
 			}
 		}
