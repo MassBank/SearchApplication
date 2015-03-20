@@ -60,9 +60,9 @@ class Controller
 		return $this->_parse_str_ext($_SERVER['QUERY_STRING']);
 	}
 	
-	protected function _success($data)
+	protected function _success($data, $req = false)
 	{
-		$this->view->render('search/success', $data);
+		$this->view->render('search/success', $data, $req);
 		die;
 	}
 	//Display an error page if nothing exists
@@ -150,7 +150,12 @@ class Controller
 	private function get_content($content = NULL)
 	{
 		//  addslashes(urldecode($value));
-		return urldecode($content);
+		$decode = urldecode($content);
+		if ( is_numeric($decode) ) {
+			return $decode + 0;
+		}
+		return $decode;
+
 // 		if ( is_numeric( $content ) ) {
 // 			return preg_replace("@([^0-9\-])@Ui", "", $content);
 // 		} else if ( is_bool( $content ) ) {

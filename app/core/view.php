@@ -1,7 +1,7 @@
 <?php
 class View {
 	
-	public function render($path, $data = false, $error = false){
+	public function render($path, $data = false, $req = false){
 		require APP . "/view/$path.php";
 	}
 	

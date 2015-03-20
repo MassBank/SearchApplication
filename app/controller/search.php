@@ -164,8 +164,10 @@ class Search extends Controller
 				$search_type = 'keyword';
 			}
 			
-			// quick search
+			/* quick search */
+			
 			$data = NULL;
+			$req = NULL;
 			
 			// search by keyword
 			if ( $search_type == 'keyword' )
@@ -173,6 +175,7 @@ class Search extends Controller
 				$search_model = new Quick_Search_Keyword_Model();
 				$search_params = $this->_get_params_quick_search_by_keyword();
 				$data = $search_model->index($search_params);
+				$req = $this->_get_request_settings($search_params);
 			}
 			
 			// search by peak
@@ -181,12 +184,18 @@ class Search extends Controller
 				$search_model = new Quick_Search_Peak_Model();
 				$search_params = $this->_get_params_quick_search_by_peak();
 				$data = $search_model->index($search_params);
+				$req = $this->_get_request_settings($search_params);
+			}
+			
+			else 
+			{
+				throw new Internal_Exception(Code::PARAM_ERROR_INVALID_SEARCH_TYPE);
 			}
 			
 // 			$this->view->rendertemplate('header');
 // 			$this->view->render('search/body', $data);
 // 			$this->view->rendertemplate('footer');
-			$this->_success($data);
+			$this->_success($data, $req);
 		} catch ( Exception $e ) {
 			$this->_error($e);
 		}
@@ -200,36 +209,90 @@ class Search extends Controller
 				$search_type = 'peak_by_mz';
 			}
 			
+			/* peak search */
+			
 			$data = NULL;
+			$req = NULL;
 			
 			if ( $search_type == 'peak_by_mz' )
 			{
 				$search_model = new Peak_Search_Peak_By_Mz_Model();
 				$search_params = $this->_get_params_peak_search_peak_by_mz();
 				$data = $search_model->index($search_params);
+				$req = $this->_get_request_settings($search_params);
 			}
 			else if ( $search_type == 'diff_by_mz' )
 			{
 				$search_model = new Peak_Search_Diff_By_Mz_Model();
 				$search_params = $this->_get_params_peak_search_diff_by_mz();
 				$data = $search_model->index($search_params);
+				$req = $this->_get_request_settings($search_params);
 			}
 			else if ( $search_type == 'peak_by_formula' )
 			{
 				$search_model = new Peak_Search_Peak_By_Formula_Model();
 				$search_params = $this->_get_params_peak_search_peak_by_formula();
 				$data = $search_model->index($search_params);
+				$req = $this->_get_request_settings($search_params);
 			}
 			else if ( $search_type == 'diff_by_formula' )
 			{
 				$search_model = new Peak_Search_Diff_By_Formula_Model();
 				$search_params = $this->_get_params_peak_search_diff_by_formula();
 				$data = $search_model->index($search_params);
+				$req = $this->_get_request_settings($search_params);
 			}
-			$this->_success($data);
+			else
+			{
+				throw new Internal_Exception(Code::PARAM_ERROR_INVALID_SEARCH_TYPE);
+			}
+			$this->_success($data, $req);
 		} catch ( Exception $e ) {
 			$this->_error($e);
 		}
+	}
+	
+	private function _get_request_settings($search_params)
+	{
+		$req = array();
+		$full_url = $this->_full_url($_SERVER);
+		$req["location"] = parse_url($full_url);
+		$req["location"]["url"] = $full_url;
+		$req["location"]["origin"] = $this->_url_origin($_SERVER);
+		// set parameters & path information
+		$params = array();
+		foreach ( $this->parse_query_str() as $key => $val ) {
+			if ( $key == "url" ) {
+			} else {
+				array_push($params, array( $key => $val ));
+			}
+		}
+		$req["location"]["parameters"] = $params;
+		// set timestamp information
+		$objDateTime = new DateTime('NOW');
+		$req["timestamp"] = $objDateTime->format(DateTime::ISO8601);
+		// set pagination
+		$req["pagination"] = array();
+		$req["pagination"]["start"] = intval($search_params->get_start());
+		$req["pagination"]["limit"] = intval($search_params->get_num());
+		return $req;
+	}
+	
+	private function _url_origin($s, $use_forwarded_host=false)
+	{
+		$ssl = (!empty($s['HTTPS']) && $s['HTTPS'] == 'on') ? true:false;
+		$sp = strtolower($s['SERVER_PROTOCOL']);
+		$protocol = substr($sp, 0, strpos($sp, '/')) . (($ssl) ? 's' : '');
+		$port = $s['SERVER_PORT'];
+		$port = ((!$ssl && $port=='80') || ($ssl && $port=='443')) ? '' : ':'.$port;
+		$host = ($use_forwarded_host && isset($s['HTTP_X_FORWARDED_HOST'])) ? $s['HTTP_X_FORWARDED_HOST'] : (isset($s['HTTP_HOST']) ? $s['HTTP_HOST'] : null);
+		$host = isset($host) ? $host : $s['SERVER_NAME'] . $port;
+		return $protocol . '://' . $host;
+	}
+	
+	private function _full_url($s, $use_forwarded_host=false)
+	{
+		return $this->_url_origin($s, $use_forwarded_host) . $s['REQUEST_URI'];
 	}
 	
 	private function _get_params_quick_search_by_keyword()
@@ -282,7 +345,7 @@ class Search extends Controller
 					$mz = trim(substr($peak, 0, $pos_p));
 					$inte = trim(substr($peak, $pos_p + 1, strlen($peak)));
 					if ( (is_numeric($mz) == false) || (is_numeric($inte) == false) ) {
-						throw new Internal_Exception(Code::PARAM_ERROR_ILLEGAL_PEAK);
+						throw new Internal_Exception(Code::PARAM_ERROR_INVALID_PEAK);
 // 						$is_error = true;
 // 						break;
 					}
@@ -290,7 +353,7 @@ class Search extends Controller
 						$max_inte = floatval($inte);
 					}
 				} else {
-					throw new Internal_Exception(Code::PARAM_ERROR_ILLEGAL_PEAK);
+					throw new Internal_Exception(Code::PARAM_ERROR_INVALID_PEAK);
 // 					$is_error = true;
 // 					break;
 				}
@@ -299,7 +362,7 @@ class Search extends Controller
 		
 		$p_cutoff = $this->GET_PARAM(self::PARAM_CUTOFF, $params);
 		if ( /* !$is_error &&  */(is_numeric($p_cutoff) == false) ) {
-			throw new Internal_Exception(Code::PARAM_ERROR_ILLEGAL_CUTOFF);
+			throw new Internal_Exception(Code::PARAM_ERROR_INVALID_CUTOFF);
 // 			$is_error = true;
 		} else {
 			foreach ( $peak_list as $peak )
@@ -367,8 +430,17 @@ class Search extends Controller
 	{
 		$params = $this->parse_query_str();
 		$result = new Peak_Search_Peak_By_Formula_Param();
-		$result->set_mode($this->GET_PARAM(self::PARAM_MODE, $params)?:"AND");
-		$result->set_formula_list($this->GET_PARAM(self::PARAM_FORMULA_LIST, $params));
+		$mode = $this->GET_PARAM(self::PARAM_MODE, $params)?:"AND";
+		if ( ! (strcasecmp( $mode, "OR" ) == 0 || strcasecmp( $mode, "AND" ) == 0) ) {
+			throw new Internal_Exception(Code::PARAM_ERROR_INVALID_VALUE_MODE);
+		}
+		$result->set_mode($mode);
+		$formula_list = $this->GET_PARAM(self::PARAM_FORMULA_LIST, $params);
+		if ( empty($formula_list) ) {
+			throw new Internal_Exception(Code::PARAM_ERROR_NO_FORMULA);
+		}
+		$result->set_formula_list($formula_list);
+		$this->_get_common_search_params($result, $params);
 		return $result;
 	}
 
@@ -376,8 +448,17 @@ class Search extends Controller
 	{
 		$params = $this->parse_query_str();
 		$result = new Peak_Search_Diff_By_Formula_Param();
-		$result->set_mode($this->GET_PARAM(self::PARAM_MODE, $params)?:"SEQ");
-		$result->set_formula_list($this->GET_PARAM(self::PARAM_FORMULA_LIST, $params));
+		$mode = $this->GET_PARAM(self::PARAM_MODE, $params)?:"SEQ";
+		if ( ! (strcasecmp( $mode, "SEQ" ) == 0 || strcasecmp( $mode, "AND" ) == 0) ) {
+			throw new Internal_Exception(Code::PARAM_ERROR_INVALID_VALUE_MODE);
+		}
+		$result->set_mode($mode);
+		$formula_list = $this->GET_PARAM(self::PARAM_FORMULA_LIST, $params);
+		if ( empty($formula_list) ) {
+			throw new Internal_Exception(Code::PARAM_ERROR_NO_FORMULA);
+		}
+		$result->set_formula_list($formula_list);
+		$this->_get_common_search_params($result, $params);
 		return $result;
 	}
 	
