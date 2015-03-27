@@ -228,6 +228,7 @@ class Search extends Controller
 				$data = $search_model->index($search_params);
 				$req = $this->_get_request_settings($search_params);
 			}
+			/*
 			else if ( $search_type == 'peak_by_formula' )
 			{
 				$search_model = new Peak_Search_Peak_By_Formula_Model();
@@ -242,6 +243,7 @@ class Search extends Controller
 				$data = $search_model->index($search_params);
 				$req = $this->_get_request_settings($search_params);
 			}
+			*/
 			else
 			{
 				throw new Internal_Exception(Code::PARAM_ERROR_INVALID_SEARCH_TYPE);
@@ -298,7 +300,7 @@ class Search extends Controller
 	private function _get_params_quick_search_by_keyword()
 	{
 		$params = $this->parse_query_str();
-		//print_r($params);
+				
 		$result = new Quick_Search_Keyword_Param();
 		$result->set_compound_name_term($this->GET_PARAM(self::PARAM_COMPOUND_NAME, $params));
 		$result->set_exact_mass($this->GET_PARAM(self::PARAM_EXACT_MASS, $params));
