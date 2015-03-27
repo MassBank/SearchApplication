@@ -149,7 +149,10 @@ class Router
             if (!self::$error_callback) {
                 self::$error_callback = function() {
                     header($_SERVER['SERVER_PROTOCOL']." 404 Not Found");
-                    echo '404';
+//                     echo '404';
+                    $_controller = new Error(new ErrorException( "Invalid URL. Page not found.", null, null, null, null ));
+                    $_controller->index();
+                    die;
                 };
             } 
 

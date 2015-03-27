@@ -1,4 +1,7 @@
 <?php 
+
+include_once APP . '/entity/constant/error/code.php';
+
 class Error extends Controller {
 	
 	private $_error = null;

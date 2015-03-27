@@ -43,8 +43,8 @@ function massbank_error_handler($num, $str, $file, $line, $context = null)
         // This error code is not included in error_reporting
         return;
     }
-    
 	require APP . '/core/error.php';
+    $code = NULL;
 	$_controller = new Error(new ErrorException( $str, $code, $num, $file, $line ));
 	$_controller->index();
 	die;
