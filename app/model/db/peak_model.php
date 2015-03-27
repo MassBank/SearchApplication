@@ -3,7 +3,7 @@
 class Peak_Model extends Model
 {
 	
-	const TABLE = "PEAK";
+	const TABLE = "peak";
 	
 	public function __construct()
 	{
@@ -12,7 +12,9 @@ class Peak_Model extends Model
 	
 	public function get_high_intesity_peaks_by_range($min_mz, $max_mz, $rel_inte)
 	{
-		$sql = "SELECT " . Column::COMPOUND_ID . " FROM " . self::TABLE . " WHERE (" . Column::PEAK_MZ . " BETWEEN :min_mz AND :max_mz) AND " . Column::PEAK_RELATIVE_INTENSITY . " > :rel_inte";
+		$sql = "SELECT " . Column::COMPOUND_ID . " FROM " . self::TABLE . 
+				" WHERE (" . Column::PEAK_MZ . " BETWEEN :min_mz AND :max_mz) AND " . 
+				Column::PEAK_RELATIVE_INTENSITY . " > :rel_inte";
 		$params = array(
 				':rel_inte' => $rel_inte,
 				':min_mz' => $min_mz,
@@ -20,22 +22,6 @@ class Peak_Model extends Model
 		);
 		return $this->_db->list_result($sql, $params);
 	}
-	
-// 	public function get_high_intesity_peaks_diff_by_range($min_mz, $max_mz, $rel_inte)
-// 	{
-// 		$sb_sql = new String_Builder();
-// 		$sb_sql->append("SELECT " . Column::COMPOUND_ID . " from " . self::TABLE . " ");
-// 		$sb_sql->append("WHERE " . Column::PEAK_RELATIVE_INTENSITY . " > :rel_inte ");
-// 		$sb_sql->append("GROUP BY " . Column::COMPOUND_ID . " ");
-// 		$sb_sql->append("HAVING MIN(" . Column::PEAK_MZ . ") <= :max_mz AND MAX(" . Column::PEAK_MZ . ") >= :min_mz");
-// 		$params = array(
-// 				':rel_inte' => $rel_inte,
-// 				':min_mz' => $min_mz,
-// 				':max_mz' => $max_mz
-// 		);
-// 		$sql = $sb_sql->to_string();
-// 		return $this->_db->list_result($sql, $params);
-// 	}
 	
 	public function get_high_intesity_peaks_diff_by_range($min_mz, $max_mz, $rel_inte)
 	{
@@ -72,7 +58,7 @@ class Peak_Model extends Model
 				Common_Util::last_str_replace($sql_where_clause, " OR ", "");
 			}
 		}
-		$sql = "SELECT MZ FROM PEAK WHERE COMPOUND_ID=:compound_id" . $sql_where_clause;
+		$sql = "SELECT MZ FROM " . self::TABLE . " WHERE COMPOUND_ID=:compound_id" . $sql_where_clause;
 		$params = array(
 			':compound_id' => $compound_id
 		);
@@ -81,7 +67,7 @@ class Peak_Model extends Model
 	
 	public function get_peak_differences_by_compound_id($compound_id, $rel_int, $min_mz, $max_mz)
 	{
-		$sql = "SELECT t2.MZ AS MZ2, t1.MZ AS MZ1 FROM PEAK AS t1 LEFT JOIN PEAK AS t2 ON t1.COMPOUND_ID = t2.COMPOUND_ID 
+		$sql = "SELECT t2.MZ AS MZ2, t1.MZ AS MZ1 FROM " . self::TABLE . " AS t1 LEFT JOIN " . self::TABLE . " AS t2 ON t1.COMPOUND_ID = t2.COMPOUND_ID 
 				WHERE t1.COMPOUND_ID = :compound_id AND (t1.MZ BETWEEN t2.MZ + :min_mz and t2.MZ + :max_mz) 
 				AND t1.RELATIVE_INTENSITY > :rel_int and t2.RELATIVE_INTENSITY > :rel_int";
 		$params = array(

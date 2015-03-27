@@ -1,7 +1,7 @@
 <?php
 class Pre_Pro_Model extends Model
 {
-	const TABLE = "PRE_PRO";
+	const TABLE = "pre_pro";
 	
 	public function __construct()
 	{

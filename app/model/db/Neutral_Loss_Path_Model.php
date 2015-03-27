@@ -3,7 +3,7 @@ require_once APP . '/model/util/string_builder.php';
 
 class Neutral_Loss_Path_Model extends Model
 {
-	const TABLE = "NEUTRAL_LOSS_PATH";
+	const TABLE = "neutral_loss_path";
 	
 	public function __construct()
 	{

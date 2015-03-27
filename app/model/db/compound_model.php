@@ -1,11 +1,12 @@
 <?php
 
 require_once APP . '/model/util/string_builder.php';
+require_once APP . '/model/db/compound_name_model.php';
 
 class Compound_Model extends Model
 {
 	
-	const TABLE = "COMPOUND";
+	const TABLE = "compound";
 	
 	public function __construct()
 	{
@@ -17,8 +18,8 @@ class Compound_Model extends Model
 			$ion_mode, $instrument_ids, $ms_type_ids, $start, $num)
 	{
 		$sb_compound_sql = new String_Builder();
-		$sb_compound_sql->append("SELECT DISTINCT C.COMPOUND_ID, C.TITLE, C.ION_MODE, C.FORMULA, C.EXACT_MASS FROM COMPOUND C");
-		$sb_compound_sql->append(" LEFT JOIN COMPOUND_NAME CN ON C.COMPOUND_ID = CN.COMPOUND_ID");
+		$sb_compound_sql->append("SELECT DISTINCT C.COMPOUND_ID, C.TITLE, C.ION_MODE, C.FORMULA, C.EXACT_MASS FROM " . self::TABLE . " C");
+		$sb_compound_sql->append(" LEFT JOIN " . Compound_Name_Model::TABLE . " CN ON C.COMPOUND_ID = CN.COMPOUND_ID");
 	
 		$where_clause = array();
 		$where_clause2 = array();
@@ -40,7 +41,7 @@ class Compound_Model extends Model
 		// compound name
 		if ( !empty($compound_name_term) ) {
 			$compound_name_term = str_replace("'", "''", $compound_name_term);
-			array_push($where_clause2, "CN.CH_NAME LIKE '\%" . $compound_name_term . "\%'");
+			array_push($where_clause2, "CN.NAME LIKE '%" . $compound_name_term . "%'");
 		}
 		// tolerance & exact mass
 		if ( $mz1 && $mz2 ) {
@@ -50,7 +51,7 @@ class Compound_Model extends Model
 		// formula
 		if ( $formula_term ) {
 			array_push($where_clause2, " " . $op2 . " ");
-			array_push($where_clause2, "C.FORMULA LIKE '" . $formula_term . "'");
+			array_push($where_clause2, "C.FORMULA LIKE '%" . $formula_term . "%'");
 		}
 	
 		$str_where_clause2 = implode("", $where_clause2);
@@ -76,7 +77,7 @@ class Compound_Model extends Model
 		}
 	
 		$sql = $sb_compound_sql->to_string();
-		// echo $sql;
+// 		echo $sql;
 		return $this->_db->list_result($sql);
 	}
 	
@@ -89,9 +90,44 @@ class Compound_Model extends Model
 		return $this->_db->unique_result($sql, $params);
 	}
 	
-	public function get_compounds_by_ids($compound_ids)
+	public function get_compounds_by_ids($compound_ids, $start, $num)
 	{
-		$sql = "SELECT * FROM " . self::TABLE . " C WHERE C." . Column::COMPOUND_ID . " IN('" . implode("','", $compound_ids) . "')";
+		$sb_compound_sql = new String_Builder();
+		$sb_compound_sql->append("SELECT * FROM " . self::TABLE . " C");
+		$sb_compound_sql->append(" WHERE C." . Column::COMPOUND_ID . " IN('" . implode("','", $compound_ids) . "')");
+		$sb_compound_sql->append(" ORDER BY C.COMPOUND_ID");
+		if ( $start >= 0 && $num > 0 ) {
+			$sb_compound_sql->append(" LIMIT " . $start . ", " . $num);
+		}
+		$sql = $this->_get_formatted_sql($sb_compound_sql);
+		return $this->_db->list_result($sql);
+	}
+
+	public function get_compounds_by_ids2($compound_ids, $ion_mode, $instrument_ids = array(), $ms_type_ids = array(), $start, $num)
+	{
+		$sb_compound_sql = new String_Builder();
+		$sb_compound_sql->append("SELECT * FROM " . self::TABLE . " C");
+		$sb_compound_sql->append(" WHERE C." . Column::COMPOUND_ID . " IN('" . implode("','", $compound_ids) . "')");
+		// ion_mode
+		if ( $ion_mode == 1 ) {
+			$sb_compound_sql->append(" C.ION_MODE > 0");
+		} else if ( $ion_mode == -1 ) {
+			$sb_compound_sql->append(" C.ION_MODE < 0");
+		}
+		// instruments
+		if ( !empty($instrument_ids) ) {
+			$sb_compound_sql->append(" C.INSTRUMENT_ID IN(" . implode(",", $instrument_ids) . ")");
+		}
+		// ms_types
+		if ( !empty($ms_type_ids) ) {
+			$sb_compound_sql->append(" C.MS_TYPE_ID IN(" . implode(",", $ms_type_ids) . ")");
+		}
+		$sb_compound_sql->append(" ORDER BY C.COMPOUND_ID");
+		if ( $start >= 0 && $num > 0 ) {
+			$sb_compound_sql->append(" LIMIT " . $start . ", " . $num);
+		}
+		
+		$sql = $this->_get_formatted_sql($sb_compound_sql);
 		return $this->_db->list_result($sql);
 	}
 	
@@ -143,7 +179,7 @@ class Compound_Model extends Model
 					`COMPOUND_ID` VARCHAR(10) NOT NULL,
 					`TITLE` VARCHAR(255) NOT NULL,
 					`FORMULA` VARCHAR(255),
-					`EXACT_MASS` FLOAT,
+					`EXACT_MASS` FLOAT(10,5),
 					`ION_MODE` TINYINT,
 					`MS_TYPE_ID` INT(5) NOT NULL,
 					`INSTRUMENT_ID` INT(11) NOT NULL,

@@ -3,7 +3,7 @@ require_once APP . '/model/util/string_builder.php';
 
 class Product_Ion_Model extends Model
 {
-	const TABLE = "PRODUCT_ION";
+	const TABLE = "product_ion";
 	
 	public function __construct()
 	{
