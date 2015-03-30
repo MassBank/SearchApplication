@@ -59,7 +59,8 @@ class Peak_Search_Peak_By_Mz_Model extends Abstract_Search_Model
 			// mass spectrometry ids by types
 			$ms_type_ids = $this->get_ms_type_ids_by_names($ms_types);
 			
-			$compounds = $this->_compound_model->get_compounds_by_ids($compound_ids, $instrument_ids, $ms_type_ids, $ion_mode);
+			$compounds = $this->_compound_model->get_compounds_by_ids2($compound_ids, 
+					$ion_mode, $instrument_ids, $ms_type_ids, $params->get_start(), $params->get_num());
 		}
 		return $this->get_output($compounds);
 	}
