@@ -33,7 +33,7 @@ class Quick_Search_Peak_Model extends Abstract_Search_Model
 			return 0;
 		}
 		$this->_set_score($params);
-		return $this->get_output();
+		return $this->get_output(null);
 	}
 	
 	private function _set_query_peak($params)
@@ -257,7 +257,7 @@ class Quick_Search_Peak_Model extends Abstract_Search_Model
 		return $compound_ids;
 	}
 	
-	protected function get_output()
+	protected function get_output($compounds = NULL)
 	{
 		$result = array();
 		foreach ($this->score_list as $score)
