@@ -41,10 +41,10 @@ define('URL', URL_PROTOCOL . URL_DOMAIN . URL_SUB_FOLDER);
  * This is the place where you define your database credentials, database type etc.
  */
 define('DB_TYPE', 'mysql');
-define('DB_HOST', '127.0.0.1');
-define('DB_NAME', 'massbank');
-define('DB_USER', 'root');
-define('DB_PASS', 'abcd1234');
+define('DB_HOST', '<database host>');
+define('DB_NAME', '<database name>');
+define('DB_USER', '<database user>');
+define('DB_PASS', '<database password>');
 define('DB_CHARSET', 'utf8');
 
 define('SITETITLE', 'MassBank | Database');
