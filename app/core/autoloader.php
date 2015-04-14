@@ -62,18 +62,8 @@ function massbank_fatal_error_handler()
 spl_autoload_register ( 'massbank_autoloader' );
 set_error_handler ( 'massbank_error_handler' );
 register_shutdown_function ( 'massbank_fatal_error_handler' );
-// ini_set( "display_errors", "off" );
-// error_reporting( E_ALL );
 
 require_once APP . '/config/config.php';
-
-// mysql connection
-set_time_limit(0);   
-ini_set('mysql.connect_timeout','0');   
-ini_set('max_execution_time', '0');
-
-// timezone
-date_default_timezone_set("Japan");
 
 // start sessions
 Session::init ();

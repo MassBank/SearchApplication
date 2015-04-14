@@ -28,18 +28,32 @@ class Internal_Exception extends Exception
 				break;
 				
 			case Code::PARAM_ERROR_INVALID_CUTOFF:
-				$message = "Invalid value of cutoff threshold.";
+				$message = "Please insert a numeric value of cutoff threshold.";
 				break;
 			case Code::PARAM_ERROR_INVALID_PEAK:
-				$message = "Invalid value of peak.";
+				$message = "Please insert a valid value of peak.";
 				break;
 			case Code::PARAM_ERROR_INVALID_VALUE_MODE:
-				$message = "Invalid value for parameter 'mode'.";
+				$message = "Please insert a valid value for parameter 'mode'.";
 				break;
 			case Code::PARAM_ERROR_INVALID_SEARCH_TYPE:
-				$message = "Invalid value for parameter 'search_type'.";
+				$message = "Please insert a valid value for parameter 'search_type'.";
 				break;
-				
+			case Code::PARAM_ERROR_INVALID_EXACT_MASS:
+				$message = "Please insert a numeric value for parameter 'mz'.";
+				break;
+			case Code::PARAM_ERROR_INVALID_EXACT_MASS_LIST:
+				$message = "Please insert numeric values for parameters 'mz[]'.";
+				break;
+			case Code::PARAM_ERROR_INVALID_EXACT_MASS_DIFF_LIST:
+				$message = "Please insert numeric values for parameters 'm_diff[]'.";
+				break;
+			case Code::PARAM_ERROR_INVALID_RELATIVE_INTENSITY:
+				$message = "Please insert a numeric value for parameter 'rel_inte'.";
+				break;
+			case Code::PARAM_ERROR_INVALID_OPERATOR:
+				$message = "Please insert either 'AND' or 'OR' value for parameter 'op'.";
+				break;
 			default:
 				$message = "Unknown error";
 				break;
