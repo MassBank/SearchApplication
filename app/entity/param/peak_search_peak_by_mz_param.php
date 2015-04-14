@@ -3,7 +3,7 @@ class Peak_Search_Peak_By_Mz_Param extends Abstract_Search_Param
 {
 	
 	private $_mz_list;
-	private $_formula_list;
+// 	private $_formula_list;
 	private $_rel_inte;
 	private $_tolerance;
 	private $_operator;
@@ -16,13 +16,13 @@ class Peak_Search_Peak_By_Mz_Param extends Abstract_Search_Param
 		$this->_mz_list = $_mz_list;
 	}
 
-	public function get_formula_list(){
-		return $this->_formula_list;
-	}
+// 	public function get_formula_list(){
+// 		return $this->_formula_list;
+// 	}
 
-	public function set_formula_list($_formula_list){
-		$this->_formula_list = $_formula_list;
-	}
+// 	public function set_formula_list($_formula_list){
+// 		$this->_formula_list = $_formula_list;
+// 	}
 
 	public function get_rel_inte(){
 		return $this->_rel_inte;

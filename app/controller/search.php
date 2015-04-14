@@ -23,6 +23,7 @@ class Search extends Controller
 	const PARAM_MZ_LIST = 'mz';
 	const PARAM_MZ_DIFF_LIST = 'm_diff';
 	const PARAM_REL_INTE = 'rel_inte';
+	const PARAM_OP = 'op';
 	// peak search - peak_by_formula
 	const PARAM_MODE = 'mode';
 	// common
@@ -31,11 +32,16 @@ class Search extends Controller
 	const PARAM_ION_MODE = 'ion';
 	// paging values
 	const PARAM_START = 'start';
-	const PARAM_NUM = 'num';
+	const PARAM_LIMIT = 'limit';
+	const PARAM_SORT = 'sort';
+	const PARAM_ORDER = 'order';
 	// default values
-	const PARAM_OPERATOR = 'and';
+	const PARAM_OPERATOR_DEFAULT = 'and';
 	const PARAM_START_DEFAULT = 0;
-	const PARAM_NUM_DEFAULT = 20;
+	const PARAM_LIMIT_DEFAULT = 20;
+	const PARAM_SORT_DEFAULT = "DESC";
+	const PARAM_ION_MODE_DEFAULT = 0;
+	const PARAM_MZ_DEFAULT = 0;
 	const PARAM_REL_INTE_DEFAULT = 100;
 	
 	public function __construct()
@@ -276,7 +282,9 @@ class Search extends Controller
 		// set pagination
 		$req["pagination"] = array();
 		$req["pagination"]["start"] = intval($search_params->get_start());
-		$req["pagination"]["limit"] = intval($search_params->get_num());
+		$req["pagination"]["limit"] = intval($search_params->get_limit());
+		$req["pagination"]["order"] = $search_params->get_order();
+		$req["pagination"]["sort"] = $search_params->get_sort();
 		return $req;
 	}
 	
@@ -303,12 +311,13 @@ class Search extends Controller
 				
 		$result = new Quick_Search_Keyword_Param();
 		$result->set_compound_name_term($this->GET_PARAM(self::PARAM_COMPOUND_NAME, $params));
-		$result->set_exact_mass($this->GET_PARAM(self::PARAM_EXACT_MASS, $params));
+		$result->set_exact_mass($this->GET_PARAM(self::PARAM_EXACT_MASS, $params)?:self::PARAM_MZ_DEFAULT);
 		$result->set_tolerance($this->GET_PARAM(self::PARAM_TOLERANCE, $params));
 		$result->set_formula_term($this->GET_PARAM(self::PARAM_FORMULA, $params));
-		$result->set_op1($this->GET_PARAM(self::PARAM_OP1, $params)?:self::PARAM_OPERATOR);
-		$result->set_op2($this->GET_PARAM(self::PARAM_OP2, $params)?:self::PARAM_OPERATOR);
+		$result->set_op1(strtoupper($this->GET_PARAM(self::PARAM_OP1, $params)?:self::PARAM_OPERATOR_DEFAULT));
+		$result->set_op2(strtoupper($this->GET_PARAM(self::PARAM_OP2, $params)?:self::PARAM_OPERATOR_DEFAULT));
 		$this->_get_common_search_params($result, $params);
+		$result->set_order($this->GET_PARAM(self::PARAM_ORDER, $params)?:"COMPOUND_ID");
 		return $result;
 	}
 	
@@ -382,6 +391,7 @@ class Search extends Controller
 			$result->set_val($sb_peak->to_string());
 		}
 		$this->_get_common_search_params($result, $params);
+		$result->set_order($this->GET_PARAM(self::PARAM_ORDER, $params)?:"COMPOUND_ID");
 		/* GUI supports cutoff param only. */
 // 		$result->set_celing($this->GET_PARAM("CEILING", $params));
 // 		if ( "LINEAR" == $this->GET_PARAM("WEIGHT", $params) ) {
@@ -410,10 +420,30 @@ class Search extends Controller
 	{
 		$params = $this->parse_query_str();
 		$result = new Peak_Search_Peak_By_Mz_Param();
-		$result->set_mz_list($this->GET_PARAM(self::PARAM_MZ_LIST, $params));
-		$result->set_formula_list($this->GET_PARAM(self::PARAM_FORMULA_LIST, $params));
-		$result->set_rel_inte($this->GET_PARAM(self::PARAM_REL_INTE, $params)?:self::PARAM_REL_INTE_DEFAULT);
+		
+		$op = $this->GET_PARAM(self::PARAM_OP, $params)?:"AND";
+		if ( !empty($op) && ((strcasecmp($op, "AND") == 0) || (strcasecmp($op, "OR") == 0)) ) {
+			$result->set_operator($op);
+		} else {
+			throw new Internal_Exception(Code::PARAM_ERROR_INVALID_OPERATOR);
+		}
+		
+		$_mz_list = $this->GET_PARAM(self::PARAM_MZ_LIST, $params);
+		if ( !empty($_mz_list) && $this->is_numeric_array($_mz_list) ) {
+			$result->set_mz_list($_mz_list);
+		} else {
+			throw new Internal_Exception(Code::PARAM_ERROR_INVALID_EXACT_MASS_LIST);
+		}
+		
+		$_rel_inte = $this->GET_PARAM(self::PARAM_REL_INTE, $params);
+		if ( !empty($_rel_inte) && is_numeric($_rel_inte) ) {
+			$result->set_rel_inte($_rel_inte);
+		} else {
+			throw new Internal_Exception(Code::PARAM_ERROR_INVALID_RELATIVE_INTENSITY);
+		}
+// 		$result->set_formula_list($this->GET_PARAM(self::PARAM_FORMULA_LIST, $params));
 		$this->_get_common_search_params($result, $params);
+		$result->set_order($this->GET_PARAM(self::PARAM_ORDER, $params)?:"COMPOUND_ID");
 		return $result;
 	}
 
@@ -421,10 +451,32 @@ class Search extends Controller
 	{
 		$params = $this->parse_query_str();
 		$result = new Peak_Search_Diff_By_Mz_Param();
-		$result->set_mz_diff_list($this->GET_PARAM(self::PARAM_MZ_DIFF_LIST, $params));
-		$result->set_formula_list($this->GET_PARAM(self::PARAM_FORMULA_LIST, $params));
-		$result->set_rel_inte($this->GET_PARAM(self::PARAM_REL_INTE, $params)?:self::PARAM_REL_INTE_DEFAULT);
+		
+		$op = $this->GET_PARAM(self::PARAM_OP, $params)?:"AND";
+		if ( !empty($op) && ((strcasecmp($op, "AND") == 0) || (strcasecmp($op, "OR") == 0)) ) {
+			$result->set_operator($op);
+		} else {
+			throw new Internal_Exception(Code::PARAM_ERROR_INVALID_OPERATOR);
+		}
+		
+		$_mz_diff_list = $this->GET_PARAM(self::PARAM_MZ_DIFF_LIST, $params);
+		if ( !empty($_mz_diff_list) && $this->is_numeric_array($_mz_diff_list) ) {
+			$result->set_mz_diff_list($_mz_diff_list);
+		} else {
+			throw new Internal_Exception(Code::PARAM_ERROR_INVALID_EXACT_MASS_DIFF_LIST);
+		}
+		
+		$_rel_inte = $this->GET_PARAM(self::PARAM_REL_INTE, $params);
+		if ( !empty($_rel_inte) && is_numeric($_rel_inte) ) {
+			$result->set_rel_inte($_rel_inte);
+		} else {
+			throw new Internal_Exception(Code::PARAM_ERROR_INVALID_RELATIVE_INTENSITY);
+		}
+// 		$result->set_mz_diff_list($this->GET_PARAM(self::PARAM_MZ_DIFF_LIST, $params));
+// 		$result->set_formula_list($this->GET_PARAM(self::PARAM_FORMULA_LIST, $params));
+// 		$result->set_rel_inte($this->GET_PARAM(self::PARAM_REL_INTE, $params)?:self::PARAM_REL_INTE_DEFAULT);
 		$this->_get_common_search_params($result, $params);
+		$result->set_order($this->GET_PARAM(self::PARAM_ORDER, $params)?:"COMPOUND_ID");
 		return $result;
 	}
 
@@ -443,6 +495,7 @@ class Search extends Controller
 		}
 		$result->set_formula_list($formula_list);
 		$this->_get_common_search_params($result, $params);
+		$result->set_order($this->GET_PARAM(self::PARAM_ORDER, $params)?:"COMPOUND_ID");
 		return $result;
 	}
 
@@ -461,6 +514,7 @@ class Search extends Controller
 		}
 		$result->set_formula_list($formula_list);
 		$this->_get_common_search_params($result, $params);
+		$result->set_order($this->GET_PARAM(self::PARAM_ORDER, $params)?:"COMPOUND_ID");
 		return $result;
 	}
 	
@@ -468,10 +522,22 @@ class Search extends Controller
 	{
 		$result->set_instrument_types($this->GET_PARAM(self::PARAM_INSTRUMENT, $params));
 		$result->set_ms_types($this->GET_PARAM(self::PARAM_MS_TYPE, $params));
-		$result->set_ion_mode($this->GET_PARAM(self::PARAM_ION_MODE, $params));
+		$result->set_ion_mode($this->GET_PARAM(self::PARAM_ION_MODE, $params)?:self::PARAM_ION_MODE_DEFAULT);
+		// pagination params
 		$result->set_start($this->GET_PARAM(self::PARAM_START, $params)?:self::PARAM_START_DEFAULT);
-		$result->set_num($this->GET_PARAM(self::PARAM_NUM, $params)?:self::PARAM_NUM_DEFAULT);
+		$result->set_limit($this->GET_PARAM(self::PARAM_LIMIT, $params)?:self::PARAM_LIMIT_DEFAULT);
+		$result->set_sort($this->GET_PARAM(self::PARAM_SORT, $params)?:self::PARAM_SORT_DEFAULT);
+// 		print_r($result);
 		return $result;
+	}
+	
+	private function is_numeric_array(array $array) {
+	    foreach ($array as $a => $b) {
+	        if (!is_numeric($b)) {
+	            return false;
+	        }
+	    }
+	    return true;
 	}
 	
 }

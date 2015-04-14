@@ -20,6 +20,7 @@ class Peak_Model extends Model
 				':min_mz' => $min_mz,
 				':max_mz' => $max_mz
 		);
+// 		print $sql . ", min:" . $min_mz . ", max:" . $max_mz;
 		return $this->_db->list_result($sql, $params);
 	}
 	
@@ -37,6 +38,8 @@ class Peak_Model extends Model
 				':max_mz' => $max_mz
 		);
 		$sql = $sb_sql->to_string();
+// 		print $sql . ", min:" . $min_mz . ", max:" . $max_mz;
+// 		return null;
 		return $this->_db->list_result($sql, $params);
 	}
 	
@@ -81,7 +84,7 @@ class Peak_Model extends Model
 	
 	public function get_max_intensity_groups_by_compound($cutoff, $min_mz, $max_mz)
 	{
-		$sql = "SELECT MAX(CONCAT(LPAD(RELATIVE_INTENSITY, 3, ' '), ' ', COMPOUND_ID, ' ', MZ)) MAX_RELATIVE_INTENSITY FROM PEAK 
+		$sql = "SELECT MAX(CONCAT(LPAD(RELATIVE_INTENSITY, 3, ' '), ' ', COMPOUND_ID, ' ', MZ)) MAX_RELATIVE_INTENSITY FROM " . self::TABLE . " 
 				WHERE RELATIVE_INTENSITY >= :rel_int and (MZ BETWEEN :min_mz AND :max_mz) GROUP BY COMPOUND_ID";
 		$params = array(
 			':rel_int' => floatval(sprintf("%d", $cutoff)),
@@ -93,7 +96,7 @@ class Peak_Model extends Model
 	
 	public function get_peaks_greater_than_cutoff($compound_id, $cutoff)
 	{
-		$sql = "SELECT MZ, RELATIVE_INTENSITY FROM PEAK WHERE COMPOUND_ID =:compound_id AND RELATIVE_INTENSITY >=:rel_int";
+		$sql = "SELECT MZ, RELATIVE_INTENSITY FROM " . self::TABLE . " WHERE COMPOUND_ID =:compound_id AND RELATIVE_INTENSITY >=:rel_int";
 		$params = array(
 			':compound_id' => strval(sprintf("%s", $compound_id)),
 			':rel_int' => floatval(sprintf("%d", $cutoff))

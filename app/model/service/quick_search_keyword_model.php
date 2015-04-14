@@ -11,19 +11,27 @@ class Quick_Search_Keyword_Model extends Abstract_Search_Model
 	
 	public function index($params)
 	{
+		/* read & init logic specify params */
 		$compound_name_term = $params->get_compound_name_term();
-		$exact_mass = $params->get_exact_mass();
-		$tolerance = $params->get_tolerance();
 		$formula_term = $params->get_formula_term();
+		$mz = $params->get_exact_mass();
+		$tolerance = $params->get_tolerance();
 		$op1 = $params->get_op1();
 		$op2 = $params->get_op2();
 		
+		/* read & init common params */
 		$instrument_types = $params->get_instrument_types();
 		$ms_types = $params->get_ms_types();
 		$ion_mode = $params->get_ion_mode();
-		$start = $params->get_start();
-		$size = $params->get_num();
 		
+		/* read & init pagination params */
+		$pagination = new Pagination_Param();
+		$pagination->set_start($params->get_start());
+		$pagination->set_limit($params->get_limit());
+		$pagination->set_order($params->get_order());
+		$pagination->set_sort($params->get_sort());
+		
+		/* init models */
 		$this->_compound_model = $this->get_compound_model();
 		
 		// compound name term
@@ -32,24 +40,23 @@ class Quick_Search_Keyword_Model extends Abstract_Search_Model
 		// formula term
 		$formula_term = $this->get_mysql_safe_term($formula_term);
 		
+		// min_mz & max_mz
+		$min_mz = NULL;
+		$max_mz = NULL;
+		if ( $mz > 0 ) {
+			$tolerance = abs($tolerance); // get absolute value of tolerance. (2 or -2 => 2)
+			$min_mz = $mz - $tolerance - 0.00001;
+			$max_mz = $mz + $tolerance + 0.00001;
+		}
+		
 		// instrument ids by types
 		$instrument_ids = $this->get_instance_ids_by_types($instrument_types);
-		
 		// mass spectrometry ids by types
 		$ms_type_ids = $this->get_ms_type_ids_by_names($ms_types);
 		
-		// mz1 & mz2
-		$mz1 = NULL;
-		$mz2 = NULL;
-		if ( !empty($exact_mass) ) {
-			$tolerance = abs($tolerance); // get absolute value of tolerance. (2 or -2 => 2)
-			$mz1 = $exact_mass - $tolerance - 0.00001;
-			$mz2 = $exact_mass + $tolerance + 0.00001;
-		}
-		
 		$compounds = $this->_compound_model->get_compounds_by_keywords(
-				$compound_name_term, $formula_term, $mz1, $mz2, $op1, $op2,
-				$ion_mode, $instrument_ids, $ms_type_ids, $start, $size);
+				$compound_name_term, $formula_term, $min_mz, $max_mz, $op1, $op2,
+				$ion_mode, $instrument_ids, $ms_type_ids, $pagination);
 		
 		return $this->get_output($compounds);
 	}

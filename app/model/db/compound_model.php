@@ -14,8 +14,8 @@ class Compound_Model extends Model
 	}
 	
 	public function get_compounds_by_keywords(
-			$compound_name_term, $formula_term, $mz1, $mz2, $op1, $op2,
-			$ion_mode, $instrument_ids, $ms_type_ids, $start, $num)
+			$compound_name_term, $formula_term, $min_mz, $max_mz, $op1, $op2,
+			$ion_mode, $instrument_ids, $ms_type_ids, $pagination)
 	{
 		$sb_compound_sql = new String_Builder();
 		$sb_compound_sql->append("SELECT DISTINCT C.COMPOUND_ID, C.TITLE, C.ION_MODE, C.FORMULA, C.EXACT_MASS FROM " . self::TABLE . " C");
@@ -43,10 +43,10 @@ class Compound_Model extends Model
 			$compound_name_term = str_replace("'", "''", $compound_name_term);
 			array_push($where_clause2, "CN.NAME LIKE '%" . $compound_name_term . "%'");
 		}
-		// tolerance & exact mass
-		if ( $mz1 && $mz2 ) {
+		// min & max exact mass
+		if ( $min_mz && $max_mz ) {
 			array_push($where_clause2, " " . $op1 . " ");
-			array_push($where_clause2, "C.EXACT_MASS BETWEEN " . $mz1 . " AND " . $mz2);
+			array_push($where_clause2, "(C.EXACT_MASS BETWEEN " . $min_mz . " AND " . $max_mz . ")");
 		}
 		// formula
 		if ( $formula_term ) {
@@ -61,20 +61,17 @@ class Compound_Model extends Model
 		else if ( Common_Util::startwith($str_where_clause2, " " . $op2 . " ") ) {
 			$str_where_clause2 = Common_Util::first_str_replace($str_where_clause2, " " . $op2 . " ", "");
 		}
-	
+
 		if ( !empty($str_where_clause2) ) {
 			array_push($where_clause, "(" . $str_where_clause2 . ")");
 		}
-	
-		// join
+
 		if ( !empty($where_clause) ) {
 			$sb_compound_sql->append(" WHERE ");
 			$sb_compound_sql->append(implode(" AND ", $where_clause));
 		}
 		
-		if ( $start >= 0 && $num > 0) {
-			$sb_compound_sql->append(" LIMIT " . $start . ", " . $num);
-		}
+		$this->append_pagination_clause($sb_compound_sql, $pagination);
 	
 		$sql = $sb_compound_sql->to_string();
 // 		echo $sql;
@@ -90,20 +87,33 @@ class Compound_Model extends Model
 		return $this->_db->unique_result($sql, $params);
 	}
 	
-	public function get_compounds_by_ids($compound_ids, $start, $num)
+	public function get_compounds_by_ids($compound_ids, $pagination)
 	{
 		$sb_compound_sql = new String_Builder();
 		$sb_compound_sql->append("SELECT * FROM " . self::TABLE . " C");
 		$sb_compound_sql->append(" WHERE C." . Column::COMPOUND_ID . " IN('" . implode("','", $compound_ids) . "')");
-		$sb_compound_sql->append(" ORDER BY C.COMPOUND_ID");
-		if ( $start >= 0 && $num > 0 ) {
-			$sb_compound_sql->append(" LIMIT " . $start . ", " . $num);
-		}
+		
+		$this->append_pagination_clause($sb_compound_sql, $pagination);
+// 		$order_column = $pagination->get_order();
+// 		if ( !empty($order_column) ) {
+// 			$sb_compound_sql->append(" ORDER BY C." . $order_column);
+// 			$sort = $pagination->get_sort();
+// 			if ( !empty($sort) ) {
+// 				$sb_compound_sql->append(" " . $sort);
+// 			}
+// 		}
+		
+// 		$start = $pagination->get_start();
+// 		$num = $pagination->get_limit();
+// 		if ( $start >= 0 && $num > 0 ) {
+// 			$sb_compound_sql->append(" LIMIT " . $start . ", " . $num);
+// 		}
 		$sql = $this->_get_formatted_sql($sb_compound_sql);
+// 		print $sql;
 		return $this->_db->list_result($sql);
 	}
 
-	public function get_compounds_by_ids2($compound_ids, $ion_mode, $instrument_ids = array(), $ms_type_ids = array(), $start, $num)
+	public function get_compounds_by_ids2($compound_ids, $ion_mode, $instrument_ids = array(), $ms_type_ids = array(), $pagination)
 	{
 		$sb_compound_sql = new String_Builder();
 		$sb_compound_sql->append("SELECT * FROM " . self::TABLE . " C");
@@ -122,12 +132,25 @@ class Compound_Model extends Model
 		if ( !empty($ms_type_ids) ) {
 			$sb_compound_sql->append(" C.MS_TYPE_ID IN(" . implode(",", $ms_type_ids) . ")");
 		}
-		$sb_compound_sql->append(" ORDER BY C.COMPOUND_ID");
-		if ( $start >= 0 && $num > 0 ) {
-			$sb_compound_sql->append(" LIMIT " . $start . ", " . $num);
-		}
+		
+		$this->append_pagination_clause($sb_compound_sql, $pagination);
+// 		$order_column = $pagination->get_order();
+// 		if ( !empty($order_column) ) {
+// 			$sb_compound_sql->append(" ORDER BY C." . $order_column);
+// 			$sort = $pagination->get_sort();
+// 			if ( !empty($sort) ) {
+// 				$sb_compound_sql->append(" " . $sort);
+// 			}
+// 		}
+		
+// 		$start = $pagination->get_start();
+// 		$num = $pagination->get_limit();
+// 		if ( $start >= 0 && $num > 0 ) {
+// 			$sb_compound_sql->append(" LIMIT " . $start . ", " . $num);
+// 		}
 		
 		$sql = $this->_get_formatted_sql($sb_compound_sql);
+// 		print $sql;
 		return $this->_db->list_result($sql);
 	}
 	
@@ -154,6 +177,7 @@ class Compound_Model extends Model
 		$sb_compound_sql->append(" ORDER BY C.COMPOUND_ID");
 	
 		$sql = $this->_get_formatted_sql($sb_compound_sql);
+// 		print $sql;
 		return $this->_db->list_result($sql);
 	}
 	
@@ -205,6 +229,24 @@ class Compound_Model extends Model
 				':ms_type_id' => $ms_type_id, 
 				':instrument_id' => $instrument_id);
 		$this->_db->execute($sql, $parameters);
+	}
+	
+	private function append_pagination_clause($sb_compound_sql, $pagination)
+	{
+		$order_column = $pagination->get_order();
+		if ( !empty($order_column) ) {
+			$sb_compound_sql->append(" ORDER BY C." . strtoupper($order_column));
+			$sort = $pagination->get_sort();
+			if ( !empty($sort) ) {
+				$sb_compound_sql->append(" " . strtoupper($sort));
+			}
+		}
+	
+		$start = $pagination->get_start();
+		$num = $pagination->get_limit();
+		if ( $start >= 0 && $num > 0 ) {
+			$sb_compound_sql->append(" LIMIT " . $start . ", " . $num);
+		}
 	}
 	
 }

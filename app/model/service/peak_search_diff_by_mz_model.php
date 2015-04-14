@@ -8,23 +8,31 @@ class Peak_Search_Diff_By_Mz_Model extends Abstract_Search_Model
 	
 	public function index($params)
 	{
+		/* read & init logic specify params */
 		$mz_diff_list = $params->get_mz_diff_list();
-		$formula_list = $params->get_formula_list();
 		$tolerance = $params->get_tolerance();
 		$rel_inte = $params->get_rel_inte();
+		$op = $params->get_operator();
 		
+		/* read & init common params */
 		$instrument_types = $params->get_instrument_types();
 		$ms_types = $params->get_ms_types();
 		$ion_mode = $params->get_ion_mode();
-		$start = $params->get_start();
-		$size = $params->get_num();
 		
+		/* read & init pagination params */
+		$pagination = new Pagination_Param();
+		$pagination->set_start($params->get_start());
+		$pagination->set_limit($params->get_limit());
+		$pagination->set_order($params->get_order());
+		$pagination->set_sort($params->get_sort());
+		
+		/* init models */
 		$this->_peak_model = $this->get_peak_model();
 		$this->_compound_model = $this->get_compound_model();
 		
-		$mz_count = sizeof($mz_diff_list);
 		$compound_ids = array();
 		$has_ids_init = false;
+		
 		foreach ($mz_diff_list as $mz_diff)
 		{
 			if ($mz_diff > 0) {
@@ -33,16 +41,18 @@ class Peak_Search_Diff_By_Mz_Model extends Abstract_Search_Model
 				$min_mz_diff = $mz_diff - $tolerance - 0.00001;
 				$max_mz_diff = $mz_diff + $tolerance + 0.00001;
 				
-				$ids = array();
-				$peaks = $this->_peak_model->get_high_intesity_peaks_diff_by_range($min_mz_diff, $max_mz_diff, $rel_inte);
-				foreach ($peaks as $peak) {
-					array_push($ids, $peak[Column::COMPOUND_ID]);
+				$ids = $this->get_higher_intensity_peak_diff_compound_ids_by_range($min_mz_diff, $max_mz_diff, $rel_inte);		
+				if ( strcasecmp($op, 'AND') == 0 ) {
+					if ( !empty($ids) && !$has_ids_init ) {
+						$compound_ids = $ids;
+						$has_ids_init = true;
+					} else {
+						$compound_ids = array_intersect($compound_ids, $ids);
+					}
+				} else if ( strcasecmp($op, 'OR') == 0 ) {
+					$compound_ids = array_unique(array_merge($compound_ids, $ids));
 				}
-				if ( !empty($ids) && !$has_ids_init ) {
-					$compound_ids = $ids;
-					$has_ids_init = true;
-				}
-				$compound_ids = array_intersect($compound_ids, $ids);
+				
 			}
 		}
 		
@@ -56,7 +66,7 @@ class Peak_Search_Diff_By_Mz_Model extends Abstract_Search_Model
 			$ms_type_ids = $this->get_ms_type_ids_by_names($ms_types);
 			
 			$compounds = $this->_compound_model->get_compounds_by_ids2($compound_ids, 
-					$ion_mode, $instrument_ids, $ms_type_ids, $params->get_start(), $params->get_num());
+					$ion_mode, $instrument_ids, $ms_type_ids, $pagination);
 		}
 		return $this->get_output($compounds);
 	}
@@ -79,6 +89,16 @@ class Peak_Search_Diff_By_Mz_Model extends Abstract_Search_Model
 		}
 	
 		return $data;
+	}
+	
+	private function get_higher_intensity_peak_diff_compound_ids_by_range($min_mz_diff, $max_mz_diff, $rel_inte)
+	{
+		$ids = array();
+		$peaks = $this->_peak_model->get_high_intesity_peaks_diff_by_range($min_mz_diff, $max_mz_diff, $rel_inte);
+		foreach ($peaks as $peak) {
+			array_push($ids, $peak[Column::COMPOUND_ID]);
+		}
+		return $ids;
 	}
 	
 }

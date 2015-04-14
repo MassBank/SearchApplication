@@ -66,7 +66,12 @@ class Peak_Search_Diff_By_Formula_Model extends Abstract_Search_Model
 				} 
 			}
 		}
-		$compounds = $this->_compound_model->get_compounds_by_ids($compound_ids, $params->get_start(), $params->get_num());
+		$pagination = new Pagination_Param();
+		$pagination->set_start($params->get_start());
+		$pagination->set_limit($params->get_limit());
+		$pagination->set_order($params->get_order());
+		$pagination->set_sort($params->get_sort());
+		$compounds = $this->_compound_model->get_compounds_by_ids($compound_ids, $pagination);
 		return $this->get_output($compounds);
 	}
 	

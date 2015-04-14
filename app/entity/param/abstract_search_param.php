@@ -7,7 +7,9 @@ abstract class Abstract_Search_Param
 	private $_ion_mode;
 	// paging
 	private $_start 	= 1;
-	private $_num		= 20;
+	private $_limit		= 20;
+	private $_order;
+	private $_sort;
 	
 	public function get_instrument_types(){
 		return $this->_instrument_types;
@@ -43,13 +45,33 @@ abstract class Abstract_Search_Param
 		}
 	}
 	
-	public function get_num(){
-		return $this->_num;
+	public function get_limit(){
+		return $this->_limit;
 	}
 	
-	public function set_num($_num){
-		if (isset($_num)) {
-			$this->_num = $_num;
+	public function set_limit($_limit){
+		if (isset($_limit)) {
+			$this->_limit = $_limit;
+		}
+	}
+	
+	public function get_sort(){
+		return $this->_sort;
+	}
+	
+	public function set_sort($_sort){
+		if (isset($_sort)) {
+			$this->_sort = $_sort;
+		}
+	}
+	
+	public function get_order(){
+		return $this->_order;
+	}
+	
+	public function set_order($_order){
+		if (isset($_order)) {
+			$this->_order = $_order;
 		}
 	}
 	

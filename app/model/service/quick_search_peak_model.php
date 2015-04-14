@@ -6,9 +6,9 @@ class Quick_Search_Peak_Model extends Abstract_Search_Model
 	private $map_hit_peak;
 	private $map_mz_cnt;
 	private $score_list;
-	private $m_f_len;
-	private $m_f_sum;
-	private $m_i_cnt;
+	private $m_len;
+	private $m_sum;
+	private $m_cnt;
 	
 	private $_compound_model;
 	private $_peak_model;
@@ -45,42 +45,42 @@ class Quick_Search_Peak_Model extends Abstract_Search_Model
 			$peak_parts = explode( ",", $val_list[$i] );
 			
 			$s_mz = strval( $peak_parts[0] );
-			$f_mz = floatval( $peak_parts[0] );
-			$f_val = floatval( $peak_parts[1] );
+			$mz = floatval( $peak_parts[0] );
+			$rel_inte = floatval( $peak_parts[1] );
 			
-			if ( $f_val < 1 ) {
-				$f_val = 1;
-			} else if ( $f_val > 999 ) {
-				$f_val = 999;
+			if ( $rel_inte < 1 ) {
+				$rel_inte = 1;
+			} else if ( $rel_inte > 999 ) {
+				$rel_inte = 999;
 			}
-			if ( $f_val < $params->get_cutoff() ) {
+			if ( $rel_inte < $params->get_cutoff() ) {
 				continue;
 			}
 			
 			if ( $params->get_weight() == Constant::PARAM_WEIGHT_LINEAR ) {
-				$f_val *= $f_mz / 10;
+				$rel_inte *= $mz / 10;
 			}
 			else if ( $params->get_weight() == Constant::PARAM_WEIGHT_SQUARE ) {
-				$f_val *= $f_mz * $f_mz / 100;
+				$rel_inte *= $mz * $mz / 100;
 			}
 			if ( $params->get_norm() == Constant::PARAM_NORM_LOG) {
-				$f_val = log($f_val);
+				$rel_inte = log($rel_inte);
 			}
 			else if ( $params->get_norm() == Constant::PARAM_NORM_SQRT ) {
-				$f_val = sqrt($f_val);
+				$rel_inte = sqrt($rel_inte);
 			}
 			
-			if ( $f_val > 0 ) {
+			if ( $rel_inte > 0 ) {
 				array_push($this->query_mz, $s_mz);
-				array_push($this->query_val, $f_val);
-				$this->m_f_len += $f_val * $f_val;
-				$this->m_f_sum += $f_val;
-				$this->m_i_cnt++;
+				array_push($this->query_val, $rel_inte);
+				$this->m_len += $rel_inte * $rel_inte;
+				$this->m_sum += $rel_inte;
+				$this->m_cnt++;
 			}
 		}
 		
-		if ( $this->m_i_cnt - 1 < $params->get_threshold() ) {
-			$params->set_threshold($this->m_i_cnt - 1);
+		if ( $this->m_cnt - 1 < $params->get_threshold() ) {
+			$params->set_threshold($this->m_cnt - 1);
 		}
 	}
 	
@@ -104,62 +104,63 @@ class Quick_Search_Peak_Model extends Abstract_Search_Model
 		}
 		$is_filter = true;
 		
-		$f_min_mz = 0;
-		$f_max_mz = 0;
-		$query_mz_length = sizeof($this->query_mz);
-		for ($i = 0; $i < $query_mz_length; $i++)
+		$tolerance = $params->get_tolerance();
+		$tol_unit = $params->get_tol_unit();
+		
+		$min_mz = 0;
+		$max_mz = 0;
+		$mz_count = sizeof($this->query_mz);
+		for ( $i = 0; $i < $mz_count; $i++ )
 		{
 			$str_mz = strval($this->query_mz[$i]);
-			$f_mz = floatval($str_mz);
-			$f_val = floatval($this->query_val[$i]);
-			$f_tolerance = $params->get_tolerance();
+			$mz = floatval($str_mz);
+			$rel_inte = floatval($this->query_val[$i]);
 			
-			if ( $params->get_tol_unit() == "unit" ) {
-				$f_min_mz = $f_mz - $f_tolerance;
-				$f_max_mz = $f_mz + $f_tolerance;
+			if ( strcasecmp($tol_unit, "unit") == 0 ) {
+				$min_mz = $mz - $tolerance;
+				$max_mz = $mz + $tolerance;
 			} else {
-				$f_min_mz = $f_mz * (1 - $f_tolerance / 1000000);
-				$f_max_mz = $f_mz * (1 + $f_tolerance / 1000000);
+				$min_mz = $mz * (1 - $tolerance / 1000000);
+				$max_mz = $mz * (1 + $tolerance / 1000000);
 			}
-			$f_min_mz -= 0.00001;
-			$f_max_mz += 0.00001;
+			$min_mz -= 0.00001;
+			$max_mz += 0.00001;
 			
-			$max_intensity_groups = $this->_peak_model->get_max_intensity_groups_by_compound($params->get_cutoff(), $f_min_mz, $f_max_mz);
-			$max_intensity_groups_length = sizeof($max_intensity_groups);
-			foreach ( $max_intensity_groups as $max_intensity_group)
+			$max_intensity_groups = $this->_peak_model->get_max_intensity_groups_by_compound($params->get_cutoff(), $min_mz, $max_mz);
+			foreach ( $max_intensity_groups as $max_intensity_group )
 			{
 				$values = explode(" ", $max_intensity_group["MAX_RELATIVE_INTENSITY"]); // MAX_RELATIVE_INTENSITY
 				$compound_id = $values[1];
 				
-				if ($is_filter && !in_array($compound_id, $target_ids)) {
+				if ( $is_filter && !in_array($compound_id, $target_ids) ) {
 					continue;
 				}
 				
 				$str_hit_val = strval( $values[0] );
 				$str_hit_mz = strval( $values[2] );
-				$f_hit_val = floatval( $str_hit_val );
-				$f_hit_mz = floatval( $str_hit_mz );
+				$hit_rel_inte = floatval( $str_hit_val );
+				$hit_mz = floatval( $str_hit_mz );
 				
 				if ( $params->get_weight() == Constant::PARAM_WEIGHT_LINEAR ) {
-					$f_hit_val *= $f_hit_mz / 10;
+					$hit_rel_inte *= $hit_mz / 10;
 				} else if ( $params->get_weight() == Constant::PARAM_WEIGHT_SQUARE ) {
-					$f_hit_val *= $f_hit_mz * $f_hit_mz / 100;
+					$hit_rel_inte *= $hit_mz * $hit_mz / 100;
 				}
 				if ( $params->get_norm() == Constant::PARAM_NORM_LOG ) {
-					$f_hit_val = log($f_hit_val);
+					$hit_rel_inte = log($hit_rel_inte);
 				} else if ( $params->get_norm() == Constant::PARAM_NORM_SQRT ) {
-					$f_hit_val = sqrt($f_hit_val);
+					$hit_rel_inte = sqrt($hit_rel_inte);
 				}
 				
 				$p_hit_peak = array(
 					"q_mz" => $str_mz,
-					"q_val" => $f_val,
+					"q_val" => $rel_inte,
 					"hit_mz" => $str_hit_mz,
-					"hit_val" => $f_hit_val
+					"hit_val" => $hit_rel_inte
 				);
 				$this->map_hit_peak[$compound_id][] = $p_hit_peak;
 				$map_mz_cnt_key = sprintf("%s %s", $compound_id, $str_hit_mz);
-				if (empty($this->map_mz_cnt[$map_mz_cnt_key])) {
+				if ( empty($this->map_mz_cnt[$map_mz_cnt_key]) ) {
 					$this->map_mz_cnt[$map_mz_cnt_key] = 0;
 				}
 				$this->map_mz_cnt[$map_mz_cnt_key]++;
@@ -170,10 +171,13 @@ class Quick_Search_Peak_Model extends Abstract_Search_Model
 	
 	private function _set_score($params)
 	{
-		foreach ($this->map_hit_peak as $compound_id => $hit_peaks)
+		$threshold = $params->get_threshold();
+		$cutoff = $params->get_cutoff();
+		
+		foreach ( $this->map_hit_peak as $compound_id => $hit_peaks )
 		{
-			$i_hit_num = sizeof($hit_peaks);
-			if ( $i_hit_num <= $params->get_threshold() ) {
+			$hit_peaks_count = sizeof($hit_peaks);
+			if ( $hit_peaks_count <= $threshold ) {
 				continue;
 			}
 			
@@ -181,23 +185,23 @@ class Quick_Search_Peak_Model extends Abstract_Search_Model
 			$f_len = 0;
 			$i_cnt = 0;
 			
-			$peaks = $this->_peak_model->get_peaks_greater_than_cutoff($compound_id, $params->get_cutoff());
-			foreach ($peaks as $peak)
+			$peaks = $this->_peak_model->get_peaks_greater_than_cutoff( $compound_id, $cutoff );
+			foreach ( $peaks as $peak )
 			{
-				$str_mz = $peak["MZ"];
-				$str_rel_int = $peak["RELATIVE_INTENSITY"];
-				$f_mz = floatval( $str_mz );
-				$f_val = floatval( $str_rel_int );
+				$str_mz = strval( $peak["MZ"] );
+				$str_rel_int = strval( $peak["RELATIVE_INTENSITY"] );
+				$mz = floatval( $str_mz );
+				$rel_inte = floatval( $str_rel_int );
 				
 				if ( $params->get_weight() == Constant::PARAM_WEIGHT_LINEAR ) {
-					$f_val *= $f_mz / 10;
+					$rel_inte *= $mz / 10;
 				} else if ( $params->get_weight() == Constant::PARAM_WEIGHT_SQUARE ) {
-					$f_val *= $f_mz * $f_mz / 100;
+					$rel_inte *= $mz * $mz / 100;
 				}
 				if ( $params->get_norm() == Constant::PARAM_NORM_LOG ) {
-					$f_val = log($f_val);
+					$rel_inte = log($rel_inte);
 				} else if ( $params->get_norm() == Constant::PARAM_NORM_SQRT ) {
-					$f_val = sqrt($f_val);
+					$rel_inte = sqrt($rel_inte);
 				}
 				
 				$i_mul = 0;
@@ -208,8 +212,8 @@ class Quick_Search_Peak_Model extends Abstract_Search_Model
 				if ( $i_mul == 0 ) {
 					$i_mul = 1;
 				}
-				$f_len += $f_val * $f_val * $i_mul;
-				$f_sum += $f_val * $i_mul;
+				$f_len += $rel_inte * $rel_inte * $i_mul;
+				$f_sum += $rel_inte * $i_mul;
 				$i_cnt += $i_mul;
 			}
 			
@@ -221,10 +225,10 @@ class Quick_Search_Peak_Model extends Abstract_Search_Model
 					$f_cos += floatval($hit_peak["q_val"]) * floatval($hit_peak["hit_val"]);
 				}
 				
-				if ( $this->m_f_len * $this->m_f_len == 0 ) {
+				if ( $this->m_len * $this->m_len == 0 ) {
 					$dbl_score = 0;
 				} else {
-					$dbl_score = $f_cos / sqrt($this->m_f_len * $f_len);
+					$dbl_score = $f_cos / sqrt($this->m_len * $f_len);
 				}
 			}
 			if ( $dbl_score >= 0.9999 ) {
@@ -233,10 +237,9 @@ class Quick_Search_Peak_Model extends Abstract_Search_Model
 				$dbl_score = 0;
 			}
 			
-			
 			array_push($this->score_list, array(
 				"compound_id" => $compound_id,
-				"score" => $i_hit_num + $dbl_score
+				"score" => $hit_peaks_count + $dbl_score
 			));
 			
 		}
