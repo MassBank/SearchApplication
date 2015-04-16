@@ -1,13 +1,18 @@
 <?php
 
+require_once APP . '/model/log/mb_logger.php';
+
 class Peak_Model extends Model
 {
 	
 	const TABLE = "peak";
 	
+	private $log;
+	
 	public function __construct()
 	{
 		parent::__construct();
+		$this->log = new Mb_Logger();
 	}
 	
 	public function get_high_intesity_peaks_by_range($min_mz, $max_mz, $rel_inte)
@@ -20,7 +25,7 @@ class Peak_Model extends Model
 				':min_mz' => $min_mz,
 				':max_mz' => $max_mz
 		);
-// 		print $sql . ", min:" . $min_mz . ", max:" . $max_mz;
+		$this->log->debug($sql . ", min_mz:" . $min_mz . ", max_mz:" . $max_mz);
 		return $this->_db->list_result($sql, $params);
 	}
 	
@@ -38,8 +43,7 @@ class Peak_Model extends Model
 				':max_mz' => $max_mz
 		);
 		$sql = $sb_sql->to_string();
-// 		print $sql . ", min:" . $min_mz . ", max:" . $max_mz;
-// 		return null;
+		$this->log->debug($sql . ", min_mz:" . $min_mz . ", max_mz:" . $max_mz);
 		return $this->_db->list_result($sql, $params);
 	}
 	

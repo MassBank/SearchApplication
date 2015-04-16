@@ -13,8 +13,9 @@ abstract class Model {
 	{
 		$sql = $sb_sql->to_string();
 		if (Common_Util::endswith($sql, "WHERE")) {
-			$sql = str_replace($sql, "WHERE", "");
+			$sql = str_replace("WHERE", "", $sql);
 		}
+		
 		return trim($sql);
 	}
 	

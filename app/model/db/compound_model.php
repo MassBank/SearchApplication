@@ -2,24 +2,32 @@
 
 require_once APP . '/model/util/string_builder.php';
 require_once APP . '/model/db/compound_name_model.php';
+require_once APP . '/model/log/mb_logger.php';
 
 class Compound_Model extends Model
 {
 	
 	const TABLE = "compound";
 	
+	private $log;
+	
 	public function __construct()
 	{
 		parent::__construct();
+		$this->log = new Mb_Logger();
 	}
 	
 	public function get_compounds_by_keywords(
 			$compound_name_term, $formula_term, $min_mz, $max_mz, $op1, $op2,
-			$ion_mode, $instrument_ids, $ms_type_ids, $pagination)
+			$ion_mode, $instrument_ids, $ms_type_ids, $pagination, $is_count = FALSE)
 	{
 		$sb_compound_sql = new String_Builder();
-		$sb_compound_sql->append("SELECT DISTINCT C.COMPOUND_ID, C.TITLE, C.ION_MODE, C.FORMULA, C.EXACT_MASS FROM " . self::TABLE . " C");
-		$sb_compound_sql->append(" LEFT JOIN " . Compound_Name_Model::TABLE . " CN ON C.COMPOUND_ID = CN.COMPOUND_ID");
+		if ($is_count) {
+			$sb_compound_sql->append("SELECT COUNT(DISTINCT C.COMPOUND_ID) FROM ");
+		} else {
+			$sb_compound_sql->append("SELECT DISTINCT C.COMPOUND_ID, C.TITLE, C.ION_MODE, C.FORMULA, C.EXACT_MASS FROM ");
+		}
+		$sb_compound_sql->append(Compound_Name_Model::TABLE . " CN LEFT JOIN " . self::TABLE . " C ON CN.COMPOUND_ID = C.COMPOUND_ID");
 	
 		$where_clause = array();
 		$where_clause2 = array();
@@ -74,8 +82,16 @@ class Compound_Model extends Model
 		$this->append_pagination_clause($sb_compound_sql, $pagination);
 	
 		$sql = $sb_compound_sql->to_string();
-// 		echo $sql;
+		$this->log->debug($sql);
 		return $this->_db->list_result($sql);
+	}
+	
+	public function get_compound_count_by_keywords(
+			$compound_name_term, $formula_term, $min_mz, $max_mz, $op1, $op2,
+			$ion_mode, $instrument_ids, $ms_type_ids)
+	{
+		return $this->get_compounds_by_keywords($compound_name_term, $formula_term, $min_mz, $max_mz, $op1, $op2, 
+				$ion_mode, $instrument_ids, $ms_type_ids, NULL, TRUE);
 	}
 	
 	public function get_compound_by_id($compound_id)
@@ -94,22 +110,8 @@ class Compound_Model extends Model
 		$sb_compound_sql->append(" WHERE C." . Column::COMPOUND_ID . " IN('" . implode("','", $compound_ids) . "')");
 		
 		$this->append_pagination_clause($sb_compound_sql, $pagination);
-// 		$order_column = $pagination->get_order();
-// 		if ( !empty($order_column) ) {
-// 			$sb_compound_sql->append(" ORDER BY C." . $order_column);
-// 			$sort = $pagination->get_sort();
-// 			if ( !empty($sort) ) {
-// 				$sb_compound_sql->append(" " . $sort);
-// 			}
-// 		}
-		
-// 		$start = $pagination->get_start();
-// 		$num = $pagination->get_limit();
-// 		if ( $start >= 0 && $num > 0 ) {
-// 			$sb_compound_sql->append(" LIMIT " . $start . ", " . $num);
-// 		}
 		$sql = $this->_get_formatted_sql($sb_compound_sql);
-// 		print $sql;
+		$this->log->debug($sql);
 		return $this->_db->list_result($sql);
 	}
 
@@ -134,23 +136,9 @@ class Compound_Model extends Model
 		}
 		
 		$this->append_pagination_clause($sb_compound_sql, $pagination);
-// 		$order_column = $pagination->get_order();
-// 		if ( !empty($order_column) ) {
-// 			$sb_compound_sql->append(" ORDER BY C." . $order_column);
-// 			$sort = $pagination->get_sort();
-// 			if ( !empty($sort) ) {
-// 				$sb_compound_sql->append(" " . $sort);
-// 			}
-// 		}
-		
-// 		$start = $pagination->get_start();
-// 		$num = $pagination->get_limit();
-// 		if ( $start >= 0 && $num > 0 ) {
-// 			$sb_compound_sql->append(" LIMIT " . $start . ", " . $num);
-// 		}
 		
 		$sql = $this->_get_formatted_sql($sb_compound_sql);
-// 		print $sql;
+		$this->log->debug($sql);
 		return $this->_db->list_result($sql);
 	}
 	
@@ -158,6 +146,7 @@ class Compound_Model extends Model
 	{
 		$sb_compound_sql = new String_Builder();
 		$sb_compound_sql->append("SELECT * FROM " . self::TABLE . " C WHERE");
+		
 		// ion_mode
 		if ( $ion_mode == 1 ) {
 			$sb_compound_sql->append(" C.ION_MODE > 0");
@@ -174,10 +163,11 @@ class Compound_Model extends Model
 		}
 		// TODO: MS$FOCUSED_ION: PRECURSOR_MZ
 	
-		$sb_compound_sql->append(" ORDER BY C.COMPOUND_ID");
+// 		$sb_compound_sql->append(" ORDER BY C.COMPOUND_ID");
 	
 		$sql = $this->_get_formatted_sql($sb_compound_sql);
-// 		print $sql;
+		$sql .= " ORDER BY C.COMPOUND_ID";
+		$this->log->debug($sql);
 		return $this->_db->list_result($sql);
 	}
 	
@@ -233,19 +223,24 @@ class Compound_Model extends Model
 	
 	private function append_pagination_clause($sb_compound_sql, $pagination)
 	{
-		$order_column = $pagination->get_order();
-		if ( !empty($order_column) ) {
-			$sb_compound_sql->append(" ORDER BY C." . strtoupper($order_column));
-			$sort = $pagination->get_sort();
-			if ( !empty($sort) ) {
-				$sb_compound_sql->append(" " . strtoupper($sort));
+		if ( !empty($pagination) ) 
+		{
+			$order_column = $pagination->get_order();
+		
+			if ( !empty($order_column) ) {
+				$sb_compound_sql->append(" ORDER BY C." . strtoupper($order_column));
+				$sort = $pagination->get_sort();
+				if ( !empty($sort) ) {
+					$sb_compound_sql->append(" " . strtoupper($sort));
+				}
 			}
-		}
-	
-		$start = $pagination->get_start();
-		$num = $pagination->get_limit();
-		if ( $start >= 0 && $num > 0 ) {
-			$sb_compound_sql->append(" LIMIT " . $start . ", " . $num);
+		
+			$start = $pagination->get_start();
+			$num = $pagination->get_limit();
+			if ( $start >= 0 && $num > 0 ) {
+				$sb_compound_sql->append(" LIMIT " . $start . ", " . $num);
+			}
+			
 		}
 	}
 	

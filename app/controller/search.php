@@ -4,6 +4,7 @@ require_once APP. '/model/util/common_util.php';
 require_once APP. '/entity/constant/db/column.php';
 require_once APP. '/entity/constant/error/code.php';
 require_once APP. '/entity/constant/constant.php';
+require_once APP . '/model/log/mb_logger.php';
 
 class Search extends Controller
 {
@@ -175,22 +176,32 @@ class Search extends Controller
 			$data = NULL;
 			$req = NULL;
 			
+			$log = new Mb_Logger();
+			
 			// search by keyword
 			if ( $search_type == 'keyword' )
 			{
+				$log->debug( 'START : quick search - by keyword' );
+				
 				$search_model = new Quick_Search_Keyword_Model();
 				$search_params = $this->_get_params_quick_search_by_keyword();
 				$data = $search_model->index($search_params);
 				$req = $this->_get_request_settings($search_params);
+				
+				$log->debug( 'END : quick search - by keyword' );
 			}
 			
 			// search by peak
 			else if ( $search_type == 'peak' )
 			{
+				$log->debug( 'START : quick search - by peak' );
+				
 				$search_model = new Quick_Search_Peak_Model();
 				$search_params = $this->_get_params_quick_search_by_peak();
 				$data = $search_model->index($search_params);
 				$req = $this->_get_request_settings($search_params);
+				
+				$log->debug( 'END : quick search - by peak' );
 			}
 			
 			else 
@@ -219,20 +230,29 @@ class Search extends Controller
 			
 			$data = NULL;
 			$req = NULL;
+			$log = new Mb_Logger();
 			
 			if ( $search_type == 'peak_by_mz' )
 			{
+				$log->debug( 'START : peak search - peak by m/z' );
+				
 				$search_model = new Peak_Search_Peak_By_Mz_Model();
 				$search_params = $this->_get_params_peak_search_peak_by_mz();
 				$data = $search_model->index($search_params);
 				$req = $this->_get_request_settings($search_params);
+				
+				$log->debug( 'END : peak search - peak by m/z' );
 			}
 			else if ( $search_type == 'diff_by_mz' )
 			{
+				$log->debug( 'START : peak search - peak difference by m/z' );
+				
 				$search_model = new Peak_Search_Diff_By_Mz_Model();
 				$search_params = $this->_get_params_peak_search_diff_by_mz();
 				$data = $search_model->index($search_params);
 				$req = $this->_get_request_settings($search_params);
+				
+				$log->debug( 'END : peak search - peak difference by m/z' );
 			}
 			/*
 			else if ( $search_type == 'peak_by_formula' )
