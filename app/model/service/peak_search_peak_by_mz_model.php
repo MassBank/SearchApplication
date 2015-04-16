@@ -37,12 +37,13 @@ class Peak_Search_Peak_By_Mz_Model extends Abstract_Search_Model
 		$compound_ids = array();
 		$has_ids_init = false;
 		
+		$tolerance = abs($tolerance);
+		
 		if ( !empty($mz_list) )
 		{
 			foreach ($mz_list as $mz)
 			{
 				if ($mz > 0) {
-					$tolerance = abs($tolerance);
 					
 					$min_mz = $mz - $tolerance - 0.00001;
 					$max_mz = $mz + $tolerance + 0.00001;
@@ -58,6 +59,7 @@ class Peak_Search_Peak_By_Mz_Model extends Abstract_Search_Model
 					} else if ( strcasecmp($op, 'OR') == 0 ) {
 						$compound_ids = array_unique(array_merge($compound_ids, $ids));
 					}
+					
 				}
 			}
 		}

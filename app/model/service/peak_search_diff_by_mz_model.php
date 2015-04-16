@@ -33,10 +33,11 @@ class Peak_Search_Diff_By_Mz_Model extends Abstract_Search_Model
 		$compound_ids = array();
 		$has_ids_init = false;
 		
+		$tolerance = abs($tolerance);
+		
 		foreach ($mz_diff_list as $mz_diff)
 		{
 			if ($mz_diff > 0) {
-				$tolerance = abs($tolerance);
 				
 				$min_mz_diff = $mz_diff - $tolerance - 0.00001;
 				$max_mz_diff = $mz_diff + $tolerance + 0.00001;
