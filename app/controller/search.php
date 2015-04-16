@@ -185,8 +185,11 @@ class Search extends Controller
 				
 				$search_model = new Quick_Search_Keyword_Model();
 				$search_params = $this->_get_params_quick_search_by_keyword();
-				$data = $search_model->index($search_params);
+				$result = $search_model->index($search_params);
 				$req = $this->_get_request_settings($search_params);
+				
+				$req["pagination"]["hit_count"] = $result['hit_count'];
+				$data = $result['data'];
 				
 				$log->debug( 'END : quick search - by keyword' );
 			}
@@ -198,8 +201,11 @@ class Search extends Controller
 				
 				$search_model = new Quick_Search_Peak_Model();
 				$search_params = $this->_get_params_quick_search_by_peak();
-				$data = $search_model->index($search_params);
+				$result = $search_model->index($search_params);
 				$req = $this->_get_request_settings($search_params);
+				
+				$req["pagination"]["hit_count"] = $result['hit_count'];
+				$data = $result['data'];
 				
 				$log->debug( 'END : quick search - by peak' );
 			}
@@ -238,8 +244,11 @@ class Search extends Controller
 				
 				$search_model = new Peak_Search_Peak_By_Mz_Model();
 				$search_params = $this->_get_params_peak_search_peak_by_mz();
-				$data = $search_model->index($search_params);
+				$result = $search_model->index($search_params);
 				$req = $this->_get_request_settings($search_params);
+				
+				$req["pagination"]["hit_count"] = $result['hit_count'];
+				$data = $result['data'];
 				
 				$log->debug( 'END : peak search - peak by m/z' );
 			}
@@ -249,8 +258,11 @@ class Search extends Controller
 				
 				$search_model = new Peak_Search_Diff_By_Mz_Model();
 				$search_params = $this->_get_params_peak_search_diff_by_mz();
-				$data = $search_model->index($search_params);
+				$result = $search_model->index($search_params);
 				$req = $this->_get_request_settings($search_params);
+				
+				$req["pagination"]["hit_count"] = $result['hit_count'];
+				$data = $result['data'];
 				
 				$log->debug( 'END : peak search - peak difference by m/z' );
 			}

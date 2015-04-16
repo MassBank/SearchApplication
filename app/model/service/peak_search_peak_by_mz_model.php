@@ -76,7 +76,10 @@ class Peak_Search_Peak_By_Mz_Model extends Abstract_Search_Model
 			$compounds = $this->_compound_model->get_compounds_by_ids2($compound_ids, 
 					$ion_mode, $instrument_ids, $ms_type_ids, $pagination);
 		}
-		return $this->get_output($compounds);
+		$result['data'] = $this->get_output($compounds);
+		$result['hit_count'] = intval($this->_compound_model->get_compounds_count_by_ids2($compound_ids, 
+					$ion_mode, $instrument_ids, $ms_type_ids));
+		return $result;
 	}
 	
 	protected function get_output($compounds = NULL)

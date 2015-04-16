@@ -23,7 +23,7 @@ class Compound_Model extends Model
 	{
 		$sb_compound_sql = new String_Builder();
 		if ($is_count) {
-			$sb_compound_sql->append("SELECT COUNT(DISTINCT C.COMPOUND_ID) FROM ");
+			$sb_compound_sql->append("SELECT COUNT(DISTINCT C.COMPOUND_ID) AS HIT_COUNT FROM ");
 		} else {
 			$sb_compound_sql->append("SELECT DISTINCT C.COMPOUND_ID, C.TITLE, C.ION_MODE, C.FORMULA, C.EXACT_MASS FROM ");
 		}
@@ -86,12 +86,16 @@ class Compound_Model extends Model
 		return $this->_db->list_result($sql);
 	}
 	
-	public function get_compound_count_by_keywords(
+	public function get_compounds_count_by_keywords(
 			$compound_name_term, $formula_term, $min_mz, $max_mz, $op1, $op2,
 			$ion_mode, $instrument_ids, $ms_type_ids)
 	{
-		return $this->get_compounds_by_keywords($compound_name_term, $formula_term, $min_mz, $max_mz, $op1, $op2, 
+		$result = $this->get_compounds_by_keywords($compound_name_term, $formula_term, $min_mz, $max_mz, $op1, $op2, 
 				$ion_mode, $instrument_ids, $ms_type_ids, NULL, TRUE);
+		if ( !empty($result) ) {
+			return $result[0]['HIT_COUNT'];
+		}
+		return 0;
 	}
 	
 	public function get_compound_by_id($compound_id)
@@ -115,10 +119,14 @@ class Compound_Model extends Model
 		return $this->_db->list_result($sql);
 	}
 
-	public function get_compounds_by_ids2($compound_ids, $ion_mode, $instrument_ids = array(), $ms_type_ids = array(), $pagination)
+	public function get_compounds_by_ids2($compound_ids, $ion_mode, $instrument_ids = array(), $ms_type_ids = array(), $pagination, $is_count = FALSE)
 	{
 		$sb_compound_sql = new String_Builder();
-		$sb_compound_sql->append("SELECT * FROM " . self::TABLE . " C");
+		if ( $is_count ) {
+			$sb_compound_sql->append("SELECT COUNT(C." . Column::COMPOUND_ID . ") AS HIT_COUNT FROM " . self::TABLE . " C");
+		} else {
+			$sb_compound_sql->append("SELECT * FROM " . self::TABLE . " C");
+		}
 		$sb_compound_sql->append(" WHERE C." . Column::COMPOUND_ID . " IN('" . implode("','", $compound_ids) . "')");
 		// ion_mode
 		if ( $ion_mode == 1 ) {
@@ -140,6 +148,15 @@ class Compound_Model extends Model
 		$sql = $this->_get_formatted_sql($sb_compound_sql);
 		$this->log->debug($sql);
 		return $this->_db->list_result($sql);
+	}
+	
+	public function get_compounds_count_by_ids2($compound_ids, $ion_mode, $instrument_ids = array(), $ms_type_ids = array())
+	{
+		$result = $this->get_compounds_by_ids2($compound_ids, $ion_mode, $instrument_ids, $ms_type_ids, NULL, TRUE);
+		if ( !empty($result) ) {
+			return $result[0]['HIT_COUNT'];
+		}
+		return 0;
 	}
 	
 	public function get_compounds_by_ion_mode($ion_mode, $instrument_ids = array(), $ms_type_ids = array())
