@@ -11,13 +11,13 @@ ob_start ();
 require(APP . '/core/autoloader.php');
 
 //define routes
-Router::get('home', 'home@index');
+// Router::get('home', 'home@index');
 
-//Router::get('search', 'search@index');
+// Router::get('search', 'search@index');
 Router::get('search/quick', 'search@quick');
 Router::get('search/peak', 'search@peak');
 
-Router::get('data', 'data@index');
+// Router::get('data', 'data@index');
 
 //execute matched routes
 Router::dispatch();
