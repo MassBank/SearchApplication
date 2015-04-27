@@ -109,45 +109,59 @@ class Compound_Model extends Model
 	
 	public function get_compounds_by_ids($compound_ids, $pagination)
 	{
-		$sb_compound_sql = new String_Builder();
-		$sb_compound_sql->append("SELECT * FROM " . self::TABLE . " C");
-		$sb_compound_sql->append(" WHERE C." . Column::COMPOUND_ID . " IN('" . implode("','", $compound_ids) . "')");
-		
-		$this->append_pagination_clause($sb_compound_sql, $pagination);
-		$sql = $this->_get_formatted_sql($sb_compound_sql);
-		$this->log->debug($sql);
-		return $this->_db->list_result($sql);
+		if ( !empty($compound_ids) )
+		{
+			$sb_compound_sql = new String_Builder();
+			$sb_compound_sql->append("SELECT * FROM " . self::TABLE . " C");
+			$sb_compound_sql->append(" WHERE C." . Column::COMPOUND_ID . " IN('" . implode("','", $compound_ids) . "')");
+			
+			$this->append_pagination_clause($sb_compound_sql, $pagination);
+			$sql = $this->_get_formatted_sql($sb_compound_sql);
+			$this->log->debug($sql);
+			return $this->_db->list_result($sql);
+		}
+		else {
+			$this->log->warning("empty compound ids");
+			return array();
+		}
 	}
 
 	public function get_compounds_by_ids2($compound_ids, $ion_mode, $instrument_ids = array(), $ms_type_ids = array(), $pagination, $is_count = FALSE)
 	{
-		$sb_compound_sql = new String_Builder();
-		if ( $is_count ) {
-			$sb_compound_sql->append("SELECT COUNT(C." . Column::COMPOUND_ID . ") AS HIT_COUNT FROM " . self::TABLE . " C");
-		} else {
-			$sb_compound_sql->append("SELECT * FROM " . self::TABLE . " C");
+		if ( !empty($compound_ids) )
+		{
+			$sb_compound_sql = new String_Builder();
+			if ( $is_count ) {
+				$sb_compound_sql->append("SELECT COUNT(C." . Column::COMPOUND_ID . ") AS HIT_COUNT FROM " . self::TABLE . " C");
+			} else {
+				$sb_compound_sql->append("SELECT * FROM " . self::TABLE . " C");
+			}
+			$sb_compound_sql->append(" WHERE C." . Column::COMPOUND_ID . " IN('" . implode("','", $compound_ids) . "')");
+			// ion_mode
+			if ( $ion_mode == 1 ) {
+				$sb_compound_sql->append(" C.ION_MODE > 0");
+			} else if ( $ion_mode == -1 ) {
+				$sb_compound_sql->append(" C.ION_MODE < 0");
+			}
+			// instruments
+			if ( !empty($instrument_ids) ) {
+				$sb_compound_sql->append(" C.INSTRUMENT_ID IN(" . implode(",", $instrument_ids) . ")");
+			}
+			// ms_types
+			if ( !empty($ms_type_ids) ) {
+				$sb_compound_sql->append(" C.MS_TYPE_ID IN(" . implode(",", $ms_type_ids) . ")");
+			}
+			
+			$this->append_pagination_clause($sb_compound_sql, $pagination);
+			
+			$sql = $this->_get_formatted_sql($sb_compound_sql);
+			$this->log->debug($sql);
+			return $this->_db->list_result($sql);
 		}
-		$sb_compound_sql->append(" WHERE C." . Column::COMPOUND_ID . " IN('" . implode("','", $compound_ids) . "')");
-		// ion_mode
-		if ( $ion_mode == 1 ) {
-			$sb_compound_sql->append(" C.ION_MODE > 0");
-		} else if ( $ion_mode == -1 ) {
-			$sb_compound_sql->append(" C.ION_MODE < 0");
+		else {
+			$this->log->warning("empty compound ids");
+			return array();
 		}
-		// instruments
-		if ( !empty($instrument_ids) ) {
-			$sb_compound_sql->append(" C.INSTRUMENT_ID IN(" . implode(",", $instrument_ids) . ")");
-		}
-		// ms_types
-		if ( !empty($ms_type_ids) ) {
-			$sb_compound_sql->append(" C.MS_TYPE_ID IN(" . implode(",", $ms_type_ids) . ")");
-		}
-		
-		$this->append_pagination_clause($sb_compound_sql, $pagination);
-		
-		$sql = $this->_get_formatted_sql($sb_compound_sql);
-		$this->log->debug($sql);
-		return $this->_db->list_result($sql);
 	}
 	
 	public function get_compounds_count_by_ids2($compound_ids, $ion_mode, $instrument_ids = array(), $ms_type_ids = array())

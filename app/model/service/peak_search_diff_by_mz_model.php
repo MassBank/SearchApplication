@@ -58,6 +58,7 @@ class Peak_Search_Diff_By_Mz_Model extends Abstract_Search_Model
 		}
 		
 		$compounds = array();
+		$compounds_count = 0;
 		if ( !empty($compound_ids) )
 		{
 			// instrument ids by types
@@ -68,10 +69,13 @@ class Peak_Search_Diff_By_Mz_Model extends Abstract_Search_Model
 			
 			$compounds = $this->_compound_model->get_compounds_by_ids2($compound_ids, 
 					$ion_mode, $instrument_ids, $ms_type_ids, $pagination);
-		}
-		$result['data'] = $this->get_output($compounds);
-		$result['hit_count'] = intval($this->_compound_model->get_compounds_count_by_ids2($compound_ids,
+			
+			$compounds_count = intval($this->_compound_model->get_compounds_count_by_ids2($compound_ids,
 				$ion_mode, $instrument_ids, $ms_type_ids));
+		}
+		
+		$result['data'] = $this->get_output($compounds);
+		$result['hit_count'] = $compounds_count;
 		return $result;
 	}
 	

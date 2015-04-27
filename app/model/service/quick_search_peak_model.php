@@ -44,16 +44,19 @@ class Quick_Search_Peak_Model extends Abstract_Search_Model
 		$this->_set_score($params);
 		
 		$compound_ids = array();
-		$compounds = array();
-		
-		foreach ($this->score_list as $score)
-		{
+		foreach ($this->score_list as $score) {
 			array_push($compound_ids, $score["compound_id"]);
-			$compounds = $this->_compound_model->get_compounds_by_ids($compounds, $pagination);
+		}
+		
+		$compounds = array();
+		$compounds_count = 0;
+		if ( !empty($compound_ids) ) {
+			$compounds = $this->_compound_model->get_compounds_by_ids($compound_ids, $pagination);
+			$compounds_count = sizeof($compound_ids);
 		}
 		
 		$result['data'] = $this->get_output($compounds);
-		$result['hit_count'] = sizeof($compound_ids);
+		$result['hit_count'] = $compounds_count;
 		return $result;
 	}
 	
