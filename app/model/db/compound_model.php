@@ -86,7 +86,7 @@ class Compound_Model extends Model
 		return $this->_db->list_result($sql);
 	}
 	
-	public function get_compounds_count_by_keywords(
+	public function count_compounds_by_keywords(
 			$compound_name_term, $formula_term, $min_mz, $max_mz, $op1, $op2,
 			$ion_mode, $instrument_ids, $ms_type_ids)
 	{
@@ -164,7 +164,7 @@ class Compound_Model extends Model
 		}
 	}
 	
-	public function get_compounds_count_by_ids2($compound_ids, $ion_mode, $instrument_ids = array(), $ms_type_ids = array())
+	public function count_compounds_by_ids2($compound_ids, $ion_mode, $instrument_ids = array(), $ms_type_ids = array())
 	{
 		$result = $this->get_compounds_by_ids2($compound_ids, $ion_mode, $instrument_ids, $ms_type_ids, NULL, TRUE);
 		if ( !empty($result) ) {

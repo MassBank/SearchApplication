@@ -57,7 +57,8 @@ class Quick_Search_Keyword_Model extends Abstract_Search_Model
 		$compounds = $this->_compound_model->get_compounds_by_keywords(
 				$compound_name_term, $formula_term, $min_mz, $max_mz, $op1, $op2,
 				$ion_mode, $instrument_ids, $ms_type_ids, $pagination);
-		$compounds_count = intval($this->_compound_model->get_compounds_count_by_keywords(
+		
+		$compounds_count = intval($this->_compound_model->count_compounds_by_keywords(
 				$compound_name_term, $formula_term, $min_mz, $max_mz, $op1, $op2,
 				$ion_mode, $instrument_ids, $ms_type_ids));
 		

@@ -70,7 +70,7 @@ class Peak_Search_Diff_By_Mz_Model extends Abstract_Search_Model
 			$compounds = $this->_compound_model->get_compounds_by_ids2($compound_ids, 
 					$ion_mode, $instrument_ids, $ms_type_ids, $pagination);
 			
-			$compounds_count = intval($this->_compound_model->get_compounds_count_by_ids2($compound_ids,
+			$compounds_count = intval($this->_compound_model->count_compounds_by_ids2($compound_ids,
 				$ion_mode, $instrument_ids, $ms_type_ids));
 		}
 		

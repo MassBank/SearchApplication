@@ -59,6 +59,39 @@ class Quick_Search_Peak_Model extends Abstract_Search_Model
 		$result['hit_count'] = $compounds_count;
 		return $result;
 	}
+
+	protected function get_output($compounds = NULL)
+	{
+		if ( !empty($compounds) ) {
+			foreach ( $compounds as $compound )
+			{
+				$data[] = array(
+						'compound_id' => $compound[Column::COMPOUND_ID],
+						'title' => $compound[Column::COMPOUND_TITLE],
+						'score' => $this->get_compound_score($compound[Column::COMPOUND_ID]),
+						'ion_mode' => $this->get_value($compound[Column::COMPOUND_ION_MODE]),
+						'formula' => $compound[Column::COMPOUND_FORMULA],
+						'exact_mass' => $this->get_value($compound[Column::COMPOUND_EXACT_MASS])
+				);
+			}
+		} else {
+			$data = array();
+		}
+		return $data;
+	}
+	
+	private function get_compound_score($compound_id)
+	{
+		$score = 0;
+		foreach ( $this->score_list as $score )
+		{
+			if ( $compound_id == $score["compound_id"] ) {
+				$score = $score["score"];
+				break;
+			}
+		}
+		return $score;
+	}
 	
 	private function _set_query_peak($params)
 	{
@@ -282,28 +315,6 @@ class Quick_Search_Peak_Model extends Abstract_Search_Model
 			array_push($compound_ids, $compound[Column::COMPOUND_ID]);
 		}
 		return $compound_ids;
-	}
-	
-	protected function get_output($compounds = NULL)
-	{
-		$result = array();
-		foreach ($this->score_list as $score)
-		{
-			$compound_id = $score["compound_id"];
-			$compound = $this->_compound_model->get_compound_by_id($compound_id);
-			if ( !empty($compound) ) 
-			{
-				array_push($result, array(
-					"compound_id" => $compound[Column::COMPOUND_ID],
-					"title" => $compound[Column::COMPOUND_TITLE],
-					"score" => $this->get_value($score["score"]),
-					"ion_mode" => $this->get_value($compound[Column::COMPOUND_ION_MODE]),
-					"formula" => $compound[Column::COMPOUND_FORMULA],
-					'exact_mass' => $this->get_value($compound[Column::COMPOUND_EXACT_MASS])
-				));
-			}
-		}
-		return $result;
 	}
 	
 }

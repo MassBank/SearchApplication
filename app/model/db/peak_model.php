@@ -34,9 +34,8 @@ class Peak_Model extends Model
 		$sb_sql = new String_Builder();
 		$sb_sql->append("SELECT t1." . Column::COMPOUND_ID . " FROM " . self::TABLE . " AS t1 LEFT JOIN " . self::TABLE . " AS t2 ");
 		$sb_sql->append("ON t2." . Column::COMPOUND_ID . " = t1." . Column::COMPOUND_ID . " ");
-		$sb_sql->append("WHERE ");
-		$sb_sql->append("(t1." . Column::PEAK_MZ . " BETWEEN t2." . Column::PEAK_MZ . " + :min_mz AND t2." . Column::PEAK_MZ . " + :max_mz) ");
-		$sb_sql->append("AND t1." . Column::PEAK_RELATIVE_INTENSITY . " > :rel_inte AND t2." . Column::PEAK_RELATIVE_INTENSITY . " > :rel_inte");
+		$sb_sql->append("WHERE t1." . Column::PEAK_RELATIVE_INTENSITY . " > :rel_inte AND t2." . Column::PEAK_RELATIVE_INTENSITY . " > :rel_inte AND ");
+		$sb_sql->append("(t1." . Column::PEAK_MZ . " BETWEEN t2." . Column::PEAK_MZ . " + :min_mz AND t2." . Column::PEAK_MZ . " + :max_mz)");
 		$params = array(
 				':rel_inte' => $rel_inte,
 				':min_mz' => $min_mz,
@@ -51,7 +50,7 @@ class Peak_Model extends Model
 // 	{
 // 		$sb_sql = new String_Builder();
 // 		$sb_sql->append("SELECT t1." . Column::COMPOUND_ID . " FROM " . self::TABLE . " AS t1 LEFT JOIN " . self::TABLE . " AS t2 ");
-// 		$sb_sql->append("ON t1." . Column::COMPOUND_ID . " = t2." . Column::COMPOUND_ID . " ");
+// 		$sb_sql->append("ON t2." . Column::COMPOUND_ID . " = t1." . Column::COMPOUND_ID . " ");
 // 		$sb_sql->append("WHERE ");
 // 		$sb_sql->append("(t1." . Column::PEAK_MZ . " BETWEEN t2." . Column::PEAK_MZ . " + :min_mz AND t2." . Column::PEAK_MZ . " + :max_mz) ");
 // 		$sb_sql->append("AND t1." . Column::PEAK_RELATIVE_INTENSITY . " > :rel_inte AND t2." . Column::PEAK_RELATIVE_INTENSITY . " > :rel_inte");
@@ -61,9 +60,11 @@ class Peak_Model extends Model
 // 				':max_mz' => $max_mz
 // 		);
 // 		$sql = $sb_sql->to_string();
-// 		$this->log->debug($sql . ", min_mz:" . $min_mz . ", max_mz:" . $max_mz);
+// 		$this->log->debug($sql . ", min_mz:" . $min_mz . ", max_mz:" . $max_mz . ", rel_inte:" . $rel_inte);
 // 		return $this->_db->list_result($sql, $params);
 // 	}
+	
+
 	
 	public function get_peaks_by_compound_id($compound_id, $mz_filters)
 	{
