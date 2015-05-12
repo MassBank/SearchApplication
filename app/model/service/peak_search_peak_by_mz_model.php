@@ -96,6 +96,7 @@ class Peak_Search_Peak_By_Mz_Model extends Abstract_Search_Model
 					'title' => $compound[Column::COMPOUND_TITLE],
 					'ion_mode' => $this->get_value($compound[Column::COMPOUND_ION_MODE]),
 					'formula' => $compound[Column::COMPOUND_FORMULA],
+					'pubchem_id' => $compound[Column::PUBCHEM_ID],
 					'exact_mass' => $this->get_value($compound[Column::COMPOUND_EXACT_MASS])
 				);
 			}

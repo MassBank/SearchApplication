@@ -25,7 +25,7 @@ class Compound_Model extends Model
 		if ($is_count) {
 			$sb_compound_sql->append("SELECT COUNT(DISTINCT C.COMPOUND_ID) AS HIT_COUNT FROM ");
 		} else {
-			$sb_compound_sql->append("SELECT DISTINCT C.COMPOUND_ID, C.TITLE, C.ION_MODE, C.FORMULA, C.EXACT_MASS FROM ");
+			$sb_compound_sql->append("SELECT DISTINCT C.COMPOUND_ID, C.TITLE, C.ION_MODE, C.FORMULA, C.PUBCHEM_ID, C.EXACT_MASS FROM ");
 		}
 		$sb_compound_sql->append(Compound_Name_Model::TABLE . " CN LEFT JOIN " . self::TABLE . " C ON CN.COMPOUND_ID = C.COMPOUND_ID");
 	
@@ -222,7 +222,7 @@ class Compound_Model extends Model
 	{
 		$sql = "CREATE TABLE IF NOT EXISTS `" . Compound_Model::TABLE . "` (
 					`COMPOUND_ID` VARCHAR(10) NOT NULL,
-					`TITLE` VARCHAR(255) NOT NULL,
+					`TITLE` VARCHAR(255) NOT NULL,				
 					`FORMULA` VARCHAR(255),
 					`EXACT_MASS` FLOAT(10,5),
 					`ION_MODE` TINYINT,
