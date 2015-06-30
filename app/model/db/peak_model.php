@@ -1,6 +1,6 @@
 <?php
 
-require_once APP . '/model/log/mb_logger.php';
+require_once APP . '/model/log/log4massbank.php';
 
 class Peak_Model extends Model
 {
@@ -12,7 +12,7 @@ class Peak_Model extends Model
 	public function __construct()
 	{
 		parent::__construct();
-		$this->log = new Mb_Logger();
+		$this->log = new Log4Massbank();
 	}
 	
 	public function get_high_intesity_peaks_by_range($min_mz, $max_mz, $rel_inte)
@@ -25,7 +25,7 @@ class Peak_Model extends Model
 				':min_mz' => $min_mz,
 				':max_mz' => $max_mz
 		);
-		$this->log->debug($sql . ", min_mz:" . $min_mz . ", max_mz:" . $max_mz);
+		$this->log->debug($sql . ", min_mz:" . $min_mz . ", max_mz:" . $max_mz . ", rel_inte:" . $rel_inte);
 		return $this->_db->list_result($sql, $params);
 	}
 	

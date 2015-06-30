@@ -4,7 +4,7 @@ require_once APP. '/model/util/common_util.php';
 require_once APP. '/entity/constant/db/column.php';
 require_once APP. '/entity/constant/error/code.php';
 require_once APP. '/entity/constant/constant.php';
-require_once APP . '/model/log/mb_logger.php';
+require_once APP. '/model/log/log4massbank.php';
 
 class Search extends Controller
 {
@@ -176,7 +176,7 @@ class Search extends Controller
 			$data = NULL;
 			$req = NULL;
 			
-			$log = new Mb_Logger();
+			$log = new Log4Massbank();
 			
 			// search by keyword
 			if ( $search_type == 'keyword' )
@@ -236,7 +236,7 @@ class Search extends Controller
 			
 			$data = NULL;
 			$req = NULL;
-			$log = new Mb_Logger();
+			$log = new Log4Massbank();
 			
 			if ( $search_type == 'peak_by_mz' )
 			{

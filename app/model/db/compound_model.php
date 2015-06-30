@@ -2,7 +2,7 @@
 
 require_once APP . '/model/util/string_builder.php';
 require_once APP . '/model/db/compound_name_model.php';
-require_once APP . '/model/log/mb_logger.php';
+require_once APP . '/model/log/log4massbank.php';
 
 class Compound_Model extends Model
 {
@@ -14,7 +14,7 @@ class Compound_Model extends Model
 	public function __construct()
 	{
 		parent::__construct();
-		$this->log = new Mb_Logger();
+		$this->log = new Log4Massbank();
 	}
 	
 	public function get_compounds_by_keywords(
