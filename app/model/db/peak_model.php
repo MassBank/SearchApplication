@@ -25,7 +25,7 @@ class Peak_Model extends Model
 				':min_mz' => $min_mz,
 				':max_mz' => $max_mz
 		);
-		$this->log->debug($sql . ", min_mz:" . $min_mz . ", max_mz:" . $max_mz . ", rel_inte:" . $rel_inte);
+		$this->log->debug($sql . ", min_mz:" . $min_mz . ", max_mz:" . $max_mz);
 		return $this->_db->list_result($sql, $params);
 	}
 	
