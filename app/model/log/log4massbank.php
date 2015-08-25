@@ -17,11 +17,11 @@ class Log4Massbank {
 	public function __construct($filename = LOG_FILE_PREFIX, $dirpath = LOG_FILE_FOLDER)
 	{
 		$this->LOGFILENAME = $filename;
-		$this->LOGFILEDIR = rtrim( $dirpath, '/' ) . '/';
-		$this->LOGFILE_INFO = $this->log_file_path( "info" );
-		$this->LOGFILE_ERROR = $this->log_file_path( "error" );
-		$this->LOGFILE_WARNING = $this->log_file_path( "warning" );
-		$this->LOGFILE_DEBUGING = $this->log_file_path( "debug" );
+		$this->LOGFILEDIR = rtrim($dirpath, '/') . '/';
+		$this->LOGFILE_INFO = $this->LOGFILEDIR . $this->LOGFILENAME . "-" . date('Ymd'). "-info.log" . $this->FILE_EXT;
+		$this->LOGFILE_ERROR = $this->LOGFILEDIR . $this->LOGFILENAME . "-" . date('Ymd'). "-error.log" . $this->FILE_EXT;
+		$this->LOGFILE_WARNING = $this->LOGFILEDIR . $this->LOGFILENAME . "-" . date('Ymd'). "-warning.log" . $this->FILE_EXT;
+		$this->LOGFILE_DEBUGING = $this->LOGFILEDIR . $this->LOGFILENAME . "-" . date('Ymd'). "-debug.log" . $this->FILE_EXT;
 	}
 	
 	public function start()
@@ -62,11 +62,6 @@ class Log4Massbank {
 		$this->log( 'DEBUG', $message, $this->LOGFILE_DEBUGING );
 	}
 	
-	private function log_file_path($log_level)
-	{
-		return $this->LOGFILEDIR . $this->LOGFILENAME . "-" . date('Ymd'). "-" . $log_level . ".log" . $this->FILE_EXT;
-	}
-	
 	private function log($log_level, $message, $file)
 	{
 		if ( ini_get('log_errors') == 1 && !empty($log_level) && !empty($message) ) {
@@ -88,6 +83,7 @@ class Log4Massbank {
 			$message = preg_replace( '/\s+/', ' ', trim($message) );
 			$entry = array( "[" . $datetime . "]", "[" . $log_level . "]", "[" . $file . ":" . $line . "]", $message );
 			
+// 			fputcsv($fd, $entry, $this->SEPARATOR);
 			fwrite( $fd, print_r( implode( $this->SEPARATOR, $entry ), TRUE ) . "\n" );
 			
 			fclose( $fd );
