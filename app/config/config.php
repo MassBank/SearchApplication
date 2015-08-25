@@ -69,14 +69,11 @@ define('DB_HOST', '<database host>');
 define('DB_NAME', '<database name>');
 define('DB_USER', '<database user>');
 define('DB_PASS', '<database password>');
-define('DB_CHARSET', 'utf8');
 
-define('SITETITLE', 'MassBank | Database');
-/**
- * Configuration for: Logger
- */
 define('LOG_FILE_PREFIX', 'massbankapi');
 define('LOG_FILE_FOLDER', ROOT . 'log/');
+
+define('SITETITLE', 'MassBank | Database');
 
 //set prefix for sessions
 define('SESSION_PREFIX','massbank_');
