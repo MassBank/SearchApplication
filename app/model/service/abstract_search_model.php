@@ -49,6 +49,15 @@ abstract class Abstract_Search_Model extends Model
 		return $ms_type_ids;
 	}
 	
+	protected function get_db_value(&$tbl, $column)
+	{
+		if (isset($tbl[$column])) {
+			return $tbl[$column];
+		} else {
+			return NULL;
+		}
+	}
+	
 	protected function get_value(&$var)
 	{
 		if ( is_numeric($var) ) {

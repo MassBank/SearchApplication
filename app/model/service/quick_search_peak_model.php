@@ -71,7 +71,10 @@ class Quick_Search_Peak_Model extends Abstract_Search_Model
 						'score' => $this->get_compound_score($compound[Column::COMPOUND_ID]),
 						'ion_mode' => $this->get_value($compound[Column::COMPOUND_ION_MODE]),
 						'formula' => $compound[Column::COMPOUND_FORMULA],
-						'pubchem_id' => $compound[Column::PUBCHEM_ID],
+						'pubchem' => array(
+								"id" => $compound[Column::PUBCHEM_ID],
+								"type" => $this->get_db_value($compound, Column::PUBCHEM_ID_TYPE)
+						),
 						'exact_mass' => $this->get_value($compound[Column::COMPOUND_EXACT_MASS])
 				);
 			}

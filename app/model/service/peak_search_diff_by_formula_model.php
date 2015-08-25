@@ -85,7 +85,10 @@ class Peak_Search_Diff_By_Formula_Model extends Abstract_Search_Model
 						'title' => $compound[Column::COMPOUND_TITLE],
 						'ion_mode' => $this->get_value($compound[Column::COMPOUND_ION_MODE]),
 						'formula' => $compound[Column::COMPOUND_FORMULA],
-						'pubchem_id' => $compound[Column::PUBCHEM_ID],
+						'pubchem' => array(
+								"id" => $compound[Column::PUBCHEM_ID],
+								"type" => $this->get_db_value($compound, Column::PUBCHEM_ID_TYPE)
+						),
 						'exact_mass' => $this->get_value($compound[Column::COMPOUND_EXACT_MASS])
 				);
 			}
