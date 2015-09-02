@@ -10,6 +10,16 @@ class Compound_Name_Model extends Model
 		parent::__construct();
 	}
 	
+	public function get_compound_name_by_name_and_id($compound_id, $compound_name_name)
+	{
+		$sql = "SELECT * FROM " . self::TABLE . " C WHERE C." . Column::COMPOUND_ID . " =:compound_id AND C." . Column::COMPOUND_NAME_NAME . " =:compound_name_name";
+		$params = array(
+				":compound_id" => $compound_id,
+				":compound_name_name" => $compound_name_name
+		);
+		return $this->_db->unique_result($sql, $params);
+	}
+	
 	public function delete_all()
 	{
 // 		$sql = "TRUNCATE TABLE `" . Compound_Name_Model::TABLE . "`"; // very quickly than DELETE FROM TABLE
@@ -35,6 +45,26 @@ class Compound_Name_Model extends Model
 				)
 				CHARACTER SET utf8 COLLATE utf8_general_ci";
 		$this->_db->execute($sql);
+	}
+	
+	public function merge($compound_id, $compound_name_name)
+	{
+		$compound_name = $this->get_compound_name_by_name_and_id($compound_id, $compound_name_name);
+		if ($compound_name != NULL) {
+			$this->update($compound_id, $compound_name_name);
+		} else {
+			$this->insert($compound_id, $compound_name_name);
+		}
+	}
+	
+	public function update($compound_id, $compound_name_name)
+	{
+		$sql = "UPDATE " . self::TABLE . " C SET C." . Column::COMPOUND_NAME_NAME . "=:compound_name_name WHERE C." . Column::COMPOUND_ID . "=:compound_id";
+		$params = array(
+				":compound_id" => $compound_id,
+				":compound_name_name" => $compound_name_name
+		);
+		return $this->_db->execute($sql, $params);
 	}
 	
 	public function insert($compound_name, $compound_id)

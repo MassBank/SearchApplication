@@ -44,6 +44,11 @@ abstract class Model {
 		return $this->load_db_model('peak_model');
 	}
 	
+	protected function get_sync_info_model()
+	{
+		return $this->load_db_model('sync_info_model');
+	}
+	
 	protected function get_product_ion_model()
 	{
 		return $this->load_db_model('product_ion_model');
@@ -57,6 +62,29 @@ abstract class Model {
 	protected function get_pre_pro_model()
 	{
 		return $this->load_db_model('pre_pro_model');
+	}
+	
+	protected function append_pagination_clause($sb_sql, $pagination)
+	{
+		if ( !empty($pagination) )
+		{
+			$order_column = $pagination->get_order();
+	
+			if ( !empty($order_column) ) {
+				$sb_sql->append(" ORDER BY C." . strtoupper($order_column));
+				$sort = $pagination->get_sort();
+				if ( !empty($sort) ) {
+					$sb_sql->append(" " . strtoupper($sort));
+				}
+			}
+	
+			$start = $pagination->get_start();
+			$num = $pagination->get_limit();
+			if ( $start >= 0 && $num > 0 ) {
+				$sb_sql->append(" LIMIT " . $start . ", " . $num);
+			}
+				
+		}
 	}
 	
 	//function to load model on request

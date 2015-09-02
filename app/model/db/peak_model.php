@@ -127,6 +127,15 @@ class Peak_Model extends Model
 		return $this->_db->list_result($sql, $params);
 	}
 	
+	public function delete_peaks_by_compound_id($compound_id)
+	{
+		$sql = "DELETE FROM `" . Peak_Model::TABLE . "` WHERE COMPOUND_ID =:compound_id";
+		$parameters = array(
+				':compound_id' => $compound_id
+		);
+		$this->_db->execute($sql, $parameters);
+	}
+	
 	// manipulation query
 	
 	public function delete_all()
@@ -170,6 +179,21 @@ class Peak_Model extends Model
 				':compound_id' => $compound_id
 		);
 		$this->_db->execute($sql, $parameters);
+	}
+	
+	public function bulk_insert($tbl_peaks, $compound_id) {
+		$sql_sb = new String_Builder();
+		$sql_sb->append( "INSERT INTO " . Peak_Model::TABLE . " (MZ, INTENSITY, RELATIVE_INTENSITY, COMPOUND_ID) VALUES " );
+		foreach ($tbl_peaks as $tbl_peak) {
+			$sql_sb->append( "(" );
+			$sql_sb->append( $tbl_peak[Column::PEAK_MZ] . ", " );
+			$sql_sb->append( $tbl_peak[Column::PEAK_INTENSITY] . ", " );
+			$sql_sb->append( array_key_exists(Column::PEAK_RELATIVE_INTENSITY, $tbl_peak)? $tbl_peak[Column::PEAK_RELATIVE_INTENSITY]: 0 );
+			$sql_sb->append( ", '" . $compound_id . "'" );
+			$sql_sb->append( "), " );
+		}
+		$sql = rtrim(trim($sql_sb->to_string()), ",");
+		$this->_db->execute($sql);
 	}
 	
 }

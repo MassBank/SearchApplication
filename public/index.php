@@ -13,10 +13,12 @@ require(APP . '/core/autoloader.php');
 //define routes
 // Router::get('home', 'home@index');
 
-// Router::get('search', 'search@index');
+Router::get('search', 'search@index');
 Router::get('search/quick', 'search@quick');
 Router::get('search/peak', 'search@peak');
 
+Router::get('data/sync', 'data@sync');
+Router::get('data/merge', 'data@merge_resource_data');
 // Router::get('data', 'data@index');
 
 //execute matched routes

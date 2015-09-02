@@ -236,6 +236,42 @@ class Compound_Model extends Model
 		$this->_db->execute($sql);
 	}
 	
+	public function merge($compound_id, $title, $formula, $exact_mass, $ion_mode, 
+			$pubchem_id, $pubchem_id_type, $instrument_id, $ms_type_id, $create_date, $update_date)
+	{
+		$compound = $this->get_compound_by_id($compound_id);
+		if ($compound != NULL) {
+			$this->update($compound_id, $title, $formula, $exact_mass, $ion_mode, 
+					$pubchem_id, $pubchem_id_type, $instrument_id, $ms_type_id, $update_date);
+		} else {
+			$this->insert($compound_id, $title, $formula, $exact_mass, $ion_mode, 
+					$pubchem_id, $pubchem_id_type, $instrument_id, $ms_type_id, $create_date, $update_date);
+		}
+	}
+	
+	public function update($compound_id, $title, $formula, $exact_mass, $ion_mode, 
+			$pubchem_id, $pubchem_id_type, $instrument_id, $ms_type_id, $update_date)
+	{
+		$sql = "UPDATE " . Compound_Model::TABLE . " 
+				SET TITLE=:title, FORMULA=:formula, EXACT_MASS=:exact_mass, 
+				ION_MODE=:ion_mode, PUBCHEM_ID=:pubchem_id, PUBCHEM_ID_TYPE=:pubchem_id_type, INSTRUMENT_ID=:instrument_id, MS_TYPE_ID=:ms_type_id,
+				UPDATE_DATE=:update_date
+				WHERE COMPOUND_ID =:compound_id";
+		$parameters = array(
+				':compound_id' => $compound_id,
+				':title' => $title,
+				':formula' => $formula,
+				':exact_mass' => $exact_mass,
+				':ion_mode' => $ion_mode,
+				':pubchem_id' => $pubchem_id,
+				':pubchem_id_type' => $pubchem_id_type,
+				':instrument_id' => $instrument_id,
+				':ms_type_id' => $ms_type_id,
+				':update_date' => $update_date
+		);
+		$this->_db->execute($sql, $parameters);
+	}
+	
 	public function insert($compound_id, $title, $formula, $exact_mass, $ion_mode, $ms_type_id, $instrument_id)
 	{
 		$sql = "INSERT INTO " . Compound_Model::TABLE . " (
@@ -252,28 +288,28 @@ class Compound_Model extends Model
 		$this->_db->execute($sql, $parameters);
 	}
 	
-	private function append_pagination_clause($sb_compound_sql, $pagination)
-	{
-		if ( !empty($pagination) ) 
-		{
-			$order_column = $pagination->get_order();
+// 	private function append_pagination_clause($sb_compound_sql, $pagination)
+// 	{
+// 		if ( !empty($pagination) ) 
+// 		{
+// 			$order_column = $pagination->get_order();
 		
-			if ( !empty($order_column) ) {
-				$sb_compound_sql->append(" ORDER BY C." . strtoupper($order_column));
-				$sort = $pagination->get_sort();
-				if ( !empty($sort) ) {
-					$sb_compound_sql->append(" " . strtoupper($sort));
-				}
-			}
+// 			if ( !empty($order_column) ) {
+// 				$sb_compound_sql->append(" ORDER BY C." . strtoupper($order_column));
+// 				$sort = $pagination->get_sort();
+// 				if ( !empty($sort) ) {
+// 					$sb_compound_sql->append(" " . strtoupper($sort));
+// 				}
+// 			}
 		
-			$start = $pagination->get_start();
-			$num = $pagination->get_limit();
-			if ( $start >= 0 && $num > 0 ) {
-				$sb_compound_sql->append(" LIMIT " . $start . ", " . $num);
-			}
+// 			$start = $pagination->get_start();
+// 			$num = $pagination->get_limit();
+// 			if ( $start >= 0 && $num > 0 ) {
+// 				$sb_compound_sql->append(" LIMIT " . $start . ", " . $num);
+// 			}
 			
-		}
-	}
+// 		}
+// 	}
 	
 }
 

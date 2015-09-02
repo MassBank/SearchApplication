@@ -8,6 +8,7 @@ class Data_Model extends Model {
 	private $_compound_model;
 	private $_compound_name_model;
 	private $_peak_model;
+	private $_sync_info_model;
 	
 	public function __construct()
 	{
@@ -24,6 +25,7 @@ class Data_Model extends Model {
 		$this->_compound_model->drop_table();
 		$this->_instrument_model->drop_table();
 		$this->_ms_model->drop_table();
+		$this->_sync_info_model->drop_table();
 	}
 	
 	public function delete_all()
@@ -33,6 +35,7 @@ class Data_Model extends Model {
 		$this->_compound_model->delete_all();
 		$this->_instrument_model->delete_all();
 		$this->_ms_model->delete_all();
+		$this->_sync_info_model->delete_all();
 	}
 
 	public function create_table_if_not_exists()
@@ -42,6 +45,7 @@ class Data_Model extends Model {
 		$this->_compound_model->create_table_if_not_exists();
 		$this->_compound_name_model->create_table_if_not_exists();
 		$this->_peak_model->create_table_if_not_exists();
+		$this->_sync_info_model->create_table_if_not_exists();
 	}
 	
 	public function merge_file_data($dir_path, $sync_file_count = NULL)
@@ -170,6 +174,7 @@ class Data_Model extends Model {
 		$this->_instrument_model = $this->get_instrument_model();
 		$this->_ms_model = $this->get_ms_model();
 		$this->_peak_model = $this->get_peak_model();
+		$this->_sync_info_model = $this->get_sync_info_model();
 	}
 	
 	// file

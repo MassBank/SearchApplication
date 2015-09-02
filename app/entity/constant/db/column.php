@@ -19,6 +19,13 @@ class Column
 	const MS_TYPE_ID = "MS_TYPE_ID";
 	const MS_TYPE_NAME = "MS_TYPE_NAME";
 	
+	const SYNC_ID = "SYNC_ID";
+	const SYNC_REPOSITORY = "REPOSITORY";
+	const SYNC_RESOURCE = "RESOURCE";
+	const SYNC_MEDIA_TYPE = "MEDIA_TYPE";
+	const SYNC_UPDATED = "UPDATED";
+	const SYNC_TIMESTAMP = "TIMESTAMP";
+	
 	const PEAK_ID = "PEAK_ID";
 	const PEAK_MZ = "MZ";
 	const PEAK_INTENSITY = "INTENSITY";

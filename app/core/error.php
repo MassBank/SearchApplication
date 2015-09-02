@@ -1,6 +1,7 @@
 <?php 
 
 include_once APP . '/entity/constant/error/code.php';
+include_once APP . '/core/controller.php';
 
 class Error extends Controller {
 	
