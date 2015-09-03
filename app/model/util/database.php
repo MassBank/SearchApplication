@@ -1,9 +1,15 @@
 <?php
+
+require_once APP . '/model/log/log4massbank.php';
+
 class Database
 {
 	
+	private $log;
+	
 	public function __construct() {
 		$this->open_connection();
+		$this->log = new Log4Massbank();
 	}
 	
 	public function list_result($sql, $parameters = NULL) {
@@ -23,6 +29,13 @@ class Database
 		} else {
 			$query->execute($parameters);
 		}
+		
+		if ( empty($parameters) ) {
+			$this->log->debug($sql);
+		} else {
+			$this->log->debug($sql . " --> " . var_export($parameters, true));
+		}
+// 		$this->log->debug( strtr($sql, $parameters) );
 		return $query;
 	}
 	

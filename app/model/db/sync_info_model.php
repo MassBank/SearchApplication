@@ -32,6 +32,8 @@ class Sync_Info_Model extends Model
 	
 	public function insert($repo, $resource, $media, $updated, $timestamp)
 	{
+		$this->log->info( "Insert Sync Info -> (repo): " . $repo . ", resource: " . $resource . ", media: " . $media . ", updated: " . $updated );
+		
 		$sql = "INSERT INTO " . self::TABLE . " (" . Column::SYNC_REPOSITORY . "," . Column::SYNC_RESOURCE . "," .
 				Column::SYNC_MEDIA_TYPE . "," . Column::SYNC_UPDATED . "," . Column::SYNC_TIMESTAMP . ") VALUES (:repo,:resource,:media,:updated,:timestamp)";
 		$parameters = array(

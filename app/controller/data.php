@@ -22,7 +22,9 @@ class Data extends Controller
 	
 	private $_resource_log;
 	private $log;
-
+	
+	private $_url_data_merge = 'http://git.localhost/mbsearchapi/data/merge';
+	
 	public function __construct(){
 		parent::__construct();
 		$this->log = new Log4Massbank();
@@ -57,8 +59,11 @@ class Data extends Controller
 		$data_model->merge_file_data($dir_path, $sync_file_count);
 	}
 
-	public function sync() {
-		$this->log->info("START data synchronization");
+	public function sync() 
+	{
+		$sync_id = date('Ymdhis');
+		$this->log->resource("[START] data synchronization (S-ID: " . $sync_id . ")");
+		
 		if ( empty($this->_sync_info_model) ) {
 			$this->_sync_info_model = new Sync_Info_Model();
 			$this->_sync_info_model->create_table_if_not_exists();
@@ -79,25 +84,26 @@ class Data extends Controller
 		// save response urls into text file
 		foreach ( $obj["resources"] as $resource ) {
 			$timestamp = date('Y-m-d H:i:s');
+			$this->log->resource("[RECEIVED] sync details (S-ID: " . $sync_id . ") --> (resource): " . $resource . ", (media_type): " . $media_type . ", (updated): " . $updated);
 			$this->_sync_info_model->insert($repository, $resource, $media_type, $updated, $timestamp);
 		}
 		// call shell script via PHP
 // 		shell_exec( "/bin/sh " . ROOT . "public/run.sh" );
-		if ( !isset($GLOBALS['process']) ) {
-			$GLOBALS['process'] = new BackgroundProcess("wget 'http://git.localhost/mbsearchapi/data/merge'");
-		}
-		if ( !$GLOBALS['process']->isRunning() ) {
-			$this->log->info("START background process: " . $process->getPid());
+		if ( !isset($GLOBALS['process']) || !$GLOBALS['process']->isRunning() ) {
+			$GLOBALS['process'] = new BackgroundProcess("wget --header='Content-Type: application/hal+json' " . $this->_url_data_merge);
 			$GLOBALS['process']->run();
+			$this->log->resource("[RUN] background process (PID: " . $GLOBALS['process']->getPid() . ") for merge"); // PID create after start process
 		} else {
-			$this->log->info("ON GOING background process: " . $process->getPid());
+			$this->log->resource("[ON GOING] background process (PID: " . $GLOBALS['process']->getPid() . ") for merge");
 		}
-		$this->log->info("END data synchronization");
+		
+		$this->log->resource("[END] data synchronization (S-ID: " . $sync_id . ")");
 	}
 
 	public function merge_resource_data()
 	{
-		$this->log->info("START merge resource data");
+		$merge_id = date('Ymdhis');
+		$this->log->resource("[START] merge resource data (M-ID: " . $merge_id . ")");
 		$this->_sync_info_model = new Sync_Info_Model();
 		
 		$do_loop = true;
@@ -116,22 +122,24 @@ class Data extends Controller
 			$sync_info_list = $this->_sync_info_model->get_sync_info_list( $pagination );
 			
 			foreach ( $sync_info_list as $sync_info ) {
+				$this->log->resource("[MERGE] resource Url: " . $sync_info["RESOURCE"] . " (M-ID: " . $merge_id . ")");
 				$this->merge_url_data( $sync_info["RESOURCE"] );
 				// remove merged resource url
+				$this->log->resource("[DELETE] resource Url: " . $sync_info["RESOURCE"] . " (M-ID: " . $merge_id . ")");
 				$this->_sync_info_model->delete_sync_info( $sync_info["SYNC_ID"] );
 			}
 			
-			if ( sizeof( $sync_info_list ) < $loop_limit ) {
+			if ( sizeof( $sync_info_list ) == 0 ) {
 				$do_loop = false;
 			}
 			$loop_index++;
 		}
-		$this->log->info("END merge resource data");
+		$this->log->resource("[END] merge resource data (M-ID: " . $merge_id . ")");
 	}
 	
 	private function merge_url_data($external_file_url)
 	{
-		$this->log->info("START merge url data : " . $external_file_url);
+		$this->log->info("SYNC START merge url data : " . $external_file_url);
 		$parts = explode('/', $external_file_url);
 		if ( sizeof($parts) > 0 )
 		{
@@ -139,14 +147,14 @@ class Data extends Controller
 			$internal_file_path = ROOT . "tmp/" . $file_name . "." . date("YmdHis");
 				
 			$file_model = new File_Model();
+			$this->log->info("DOWNLOAD SYNC url data : (external) " . $external_file_url . " as (internal) " . $internal_file_path);
 			$file_model->download_external_file($external_file_url, $internal_file_path);
-			$this->log->info("DOWNLOAD url data : (external) " . $external_file_url . " as (internal) " . $internal_file_path);
+			$this->log->info("MERGE SYNC data from (external) " . $external_file_url);
 			$file_model->merge_msp_data($internal_file_path);
-			$this->log->info("MERGE MSP data from (external) " . $external_file_url);
+			$this->log->info("REMOVE SYNC downloaded file : (internal) " . $internal_file_path);
 			$file_model->remove_file($internal_file_path);
-			$this->log->info("REMOVE download file : (internal) " . $internal_file_path);
 		}
-		$this->log->info("END merge url data : " . $external_file_url);
+		$this->log->info("SYNC END merge url data : " . $external_file_url);
 	}
 
 }

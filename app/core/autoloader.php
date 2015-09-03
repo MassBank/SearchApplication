@@ -50,7 +50,7 @@ function massbank_error_handler($num, $str, $file, $line, $context = null)
 	
     $code = NULL;
     $log = new Log4Massbank();
-    $log->error($error["message"] . "->" . $error["file"] . "(" . $error["line"] . ")");
+    $log->error($str . "->" . $file . "(" . $line . ")");
 	$_controller = new Error(new ErrorException( $str, $code, $num, $file, $line ));
 	$_controller->index();
 	die;

@@ -10,7 +10,8 @@ class Log4Massbank {
 	private $LOGFILE_INFO;
 	private $LOGFILE_ERROR;
 	private $LOGFILE_WARNING;
-	private $LOGFILE_DEBUGING;
+	private $LOGFILE_DEBUG;
+	private $LOGFILE_SYNC;
 	
 	private $starttime;
 	
@@ -18,10 +19,15 @@ class Log4Massbank {
 	{
 		$this->LOGFILENAME = $filename;
 		$this->LOGFILEDIR = rtrim($dirpath, '/') . '/';
-		$this->LOGFILE_INFO = $this->LOGFILEDIR . $this->LOGFILENAME . "-" . date('Ymd'). "-info.log" . $this->FILE_EXT;
-		$this->LOGFILE_ERROR = $this->LOGFILEDIR . $this->LOGFILENAME . "-" . date('Ymd'). "-error.log" . $this->FILE_EXT;
-		$this->LOGFILE_WARNING = $this->LOGFILEDIR . $this->LOGFILENAME . "-" . date('Ymd'). "-warning.log" . $this->FILE_EXT;
-		$this->LOGFILE_DEBUGING = $this->LOGFILEDIR . $this->LOGFILENAME . "-" . date('Ymd'). "-debug.log" . $this->FILE_EXT;
+		$this->LOGFILE_INFO = $this->get_logfile_path( "info" );
+		$this->LOGFILE_ERROR = $this->get_logfile_path( "error" );
+		$this->LOGFILE_WARNING = $this->get_logfile_path( "warning" );
+		$this->LOGFILE_DEBUG = $this->get_logfile_path( "debug" );
+		$this->LOGFILE_SYNC = $this->get_logfile_path( "sync" );
+	}
+	
+	private function get_logfile_path($type) {
+		return $this->LOGFILEDIR . $this->LOGFILENAME . "-" . date('Ymd'). "-" . $type . ".log" . $this->FILE_EXT;
 	}
 	
 	public function start()
@@ -59,7 +65,12 @@ class Log4Massbank {
 	
 	public function debug($message)
 	{
-		$this->log( 'DEBUG', $message, $this->LOGFILE_DEBUGING );
+		$this->log( 'DEBUG', $message, $this->LOGFILE_DEBUG );
+	}
+	
+	public function resource($message)
+	{
+		$this->log( 'SYNC', $message, $this->LOGFILE_SYNC );
 	}
 	
 	private function log($log_level, $message, $file)

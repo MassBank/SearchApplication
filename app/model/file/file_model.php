@@ -158,13 +158,17 @@ class File_Model extends Model
 			if ( !empty ($peak_line) )
 			{
 				$peak_reads = explode("\t", $peak_line);
-				if ($this->max_inte < $peak_reads[1]) {
-					$this->max_inte = $peak_reads[1];
+				if ( sizeof($peak_reads) > 1 ) {
+					if ($this->max_inte < $peak_reads[1]) {
+						$this->max_inte = $peak_reads[1];
+					}
+					$tbl_peaks[] = array(
+							Column::PEAK_MZ => $peak_reads[0],
+							Column::PEAK_INTENSITY => $peak_reads[1]
+					);
+				} else {
+					$this->log->error( "Invalid peak line: " . $peak_line . " : peak should contain two values seperated by tab.");
 				}
-				$tbl_peaks[] = array(
-						Column::PEAK_MZ => $peak_reads[0],
-						Column::PEAK_INTENSITY => $peak_reads[1]
-				);
 			}
 		}
 		
@@ -175,15 +179,12 @@ class File_Model extends Model
 	
 	private function merge_into_database(&$tbl_compound, &$tbl_compound_names, &$tbl_instrument, &$tbl_ms, &$tbl_peaks)
 	{
-		$this->log->info( "COMPOUND: " . $tbl_compound[Column::COMPOUND_ID] . ", MS_TYPE: " . print_r ($tbl_ms) . ", INSTRUMENT:" . print_r($tbl_instrument) );
 		
 		if ( empty( $tbl_ms[Column::MS_TYPE_NAME] ) || empty( $tbl_instrument['INSTRUMENT_TYPE'] ) ) {
 			
 			$this->log->error( "empty ms type or instrument for " . $tbl_compound[Column::COMPOUND_ID] );
 			
 		} else {
-			
-			$this->log->info( "merge COMPOUND : " . $tbl_compound[Column::COMPOUND_ID] );
 			
 			foreach ($tbl_peaks as $key => $tbl_peak) {
 				$tbl_peaks[$key][Column::PEAK_RELATIVE_INTENSITY] = intval ( ($tbl_peak[Column::PEAK_INTENSITY] / $this->max_inte) * 999 );
