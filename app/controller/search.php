@@ -4,7 +4,6 @@ require_once APP. '/model/util/common_util.php';
 require_once APP. '/entity/constant/db/column.php';
 require_once APP. '/entity/constant/error/code.php';
 require_once APP. '/entity/constant/constant.php';
-require_once APP. '/model/log/log4massbank.php';
 
 class Search extends Controller
 {

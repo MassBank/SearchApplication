@@ -1,7 +1,5 @@
 <?php
 
-require_once APP . '/model/log/log4massbank.php';
-
 class Database
 {
 	

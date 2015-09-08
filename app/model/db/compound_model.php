@@ -2,7 +2,6 @@
 
 require_once APP . '/model/util/string_builder.php';
 require_once APP . '/model/db/compound_name_model.php';
-require_once APP . '/model/log/log4massbank.php';
 
 class Compound_Model extends Model
 {
@@ -241,11 +240,11 @@ class Compound_Model extends Model
 	{
 		$compound = $this->get_compound_by_id($compound_id);
 		if ($compound != NULL) {
-			$this->log->info( "Update COMPOUND: " . $compound_id );
+			$this->log->info( "[UPDATE] Compound Info: " . $compound_id );
 			$this->update($compound_id, $title, $formula, $exact_mass, $ion_mode, 
 					$pubchem_id, $pubchem_id_type, $instrument_id, $ms_type_id, $update_date);
 		} else {
-			$this->log->info( "Insert COMPOUND: " . $compound_id );
+			$this->log->info( "[INSERT] Compound Info: " . $compound_id );
 			$this->insert($compound_id, $title, $formula, $exact_mass, $ion_mode, 
 					$pubchem_id, $pubchem_id_type, $instrument_id, $ms_type_id, $create_date, $update_date);
 		}

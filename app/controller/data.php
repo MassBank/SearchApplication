@@ -6,8 +6,11 @@ require_once APP . '/model/base/data_model.php';
 require_once APP . '/model/db/sync_info_model.php';
 require_once APP . '/model/file/file_model.php';
 require_once APP . '/model/log/logfile.php';
-require_once APP . '/model/log/log4massbank.php';
 require_once APP . '/model/util/background_process.php';
+
+require_once APP . '/model/mq/mq_message.php';
+require_once APP . '/model/mq/mq_queue.php';
+require_once APP . '/controller/data.php';
 
 class Data extends Controller
 {
@@ -61,100 +64,145 @@ class Data extends Controller
 
 	public function sync() 
 	{
+		foreach (getallheaders() as $name => $value) {
+			$this->log->info("header: $name => $value");
+		}
+		$post_body = file_get_contents( 'php://input' );
+		$body_json = json_decode( $post_body, TRUE );
+		$this->log->info("req-body: " . $post_body);
+		
 		$sync_id = date('Ymdhis');
 		$this->log->resource("[START] data synchronization (S-ID: " . $sync_id . ")");
 		
-		if ( empty($this->_sync_info_model) ) {
-			$this->_sync_info_model = new Sync_Info_Model();
-			$this->_sync_info_model->create_table_if_not_exists();
-		}
-		
-// 		$prefix = "webhook-" . date('Ymdhis');
-// 		$this->_resource_log = new LogFile($prefix); 
-		
-		// call /sync URL
-		$url = 'http://git.localhost/webhook/event.json';
-		$obj = json_decode( file_get_contents($url), true );
+// 		// call /sync URL
+// 		$url = 'http://git.localhost/webhook/event.json';
+// 		$obj = json_decode( file_get_contents($url), true );
 		
 		// event values
-		$repository = $obj["name"];
-		$media_type = $obj["media_types"][0];
-		$updated = $obj["updated"];
+		$repository = $body_json["name"];
+		$media_types = $body_json["media_types"];
+		$updated = $body_json["updated"];
+		
+		$index = 1;
+		foreach ( $body_json["resources"] as $resource )
+		{
+			$key = round(microtime(true) * 1000) . $index;
+			$data = array(
+				'time' => time(),
+				'key' => $key,
+				'repository' => $repository,
+				'resource' => $resource,
+				'media_types' => $media_types,
+				'updated' => $updated,
+				'host-url' => URL
+			);
+			$this->log->info("[START] add Mq Message");
+			MqQueue::addMessage($key, $data);
+			$this->log->info("[END] add Mq Message");
+			$index++;
+		}
+		// call shell script via PHP
+		$this->log->info("[START] run monitor shell script");
+		shell_exec( "/bin/sh " . ROOT . "public/monitor.sh" );
+		$this->log->info("[END] run monitor shell script");
 
+		/* 
+		
+ 		if ( empty($this->_sync_info_model) ) {
+ 			$this->_sync_info_model = new Sync_Info_Model();
+ 			$this->_sync_info_model->create_table_if_not_exists();
+ 		}
+ 
 		// save response urls into text file
 		foreach ( $obj["resources"] as $resource ) {
 			$timestamp = date('Y-m-d H:i:s');
 			$this->log->resource("[RECEIVED] sync details (S-ID: " . $sync_id . ") --> (resource): " . $resource . ", (media_type): " . $media_type . ", (updated): " . $updated);
 			$this->_sync_info_model->insert($repository, $resource, $media_type, $updated, $timestamp);
 		}
-		// call shell script via PHP
-// 		shell_exec( "/bin/sh " . ROOT . "public/run.sh" );
 		if ( !isset($GLOBALS['process']) || !$GLOBALS['process']->isRunning() ) {
 			$GLOBALS['process'] = new BackgroundProcess("wget --header='Content-Type: application/hal+json' " . $this->_url_data_merge);
 			$GLOBALS['process']->run();
 			$this->log->resource("[RUN] background process (PID: " . $GLOBALS['process']->getPid() . ") for merge"); // PID create after start process
 		} else {
 			$this->log->resource("[ON GOING] background process (PID: " . $GLOBALS['process']->getPid() . ") for merge");
-		}
+		} 
+		
+		*/
 		
 		$this->log->resource("[END] data synchronization (S-ID: " . $sync_id . ")");
 	}
-
-	public function merge_resource_data()
-	{
-		$merge_id = date('Ymdhis');
-		$this->log->resource("[START] merge resource data (M-ID: " . $merge_id . ")");
-		$this->_sync_info_model = new Sync_Info_Model();
-		
-		$do_loop = true;
-		$loop_limit = 5;
-		$loop_index = 0;
-		
-		$pagination = new Pagination_Param();
-		$pagination->set_limit( $loop_limit );
-		$pagination->set_order( Column::SYNC_TIMESTAMP );
-		$pagination->set_sort( "ASC" );
-		
-		while ( $do_loop ) {
-			// create pagination
-			$pagination->set_start( $loop_index );
-			// get resource url list
-			$sync_info_list = $this->_sync_info_model->get_sync_info_list( $pagination );
-			
-			foreach ( $sync_info_list as $sync_info ) {
-				$this->log->resource("[MERGE] resource Url: " . $sync_info["RESOURCE"] . " (M-ID: " . $merge_id . ")");
-				$this->merge_url_data( $sync_info["RESOURCE"] );
-				// remove merged resource url
-				$this->log->resource("[DELETE] resource Url: " . $sync_info["RESOURCE"] . " (M-ID: " . $merge_id . ")");
-				$this->_sync_info_model->delete_sync_info( $sync_info["SYNC_ID"] );
-			}
-			
-			if ( sizeof( $sync_info_list ) == 0 ) {
-				$do_loop = false;
-			}
-			$loop_index++;
-		}
-		$this->log->resource("[END] merge resource data (M-ID: " . $merge_id . ")");
-	}
 	
-	private function merge_url_data($external_file_url)
+	public function merge_resource() {
+		$resource_url = $_GET["resource"];
+		$media_types = $_GET["media_types"];
+		$this->merge_url_data($resource_url, $media_types);
+	}
+
+// 	public function merge_resource_data()
+// 	{
+// 		$merge_id = date('Ymdhis');
+// 		$this->log->resource("[START] merge resource data (M-ID: " . $merge_id . ")");
+// 		$this->_sync_info_model = new Sync_Info_Model();
+		
+// 		$do_loop = true;
+// 		$loop_limit = 5;
+// 		$loop_index = 0;
+		
+// 		$pagination = new Pagination_Param();
+// 		$pagination->set_limit( $loop_limit );
+// 		$pagination->set_order( Column::SYNC_TIMESTAMP );
+// 		$pagination->set_sort( "ASC" );
+		
+// 		while ( $do_loop ) {
+// 			// create pagination
+// 			$pagination->set_start( $loop_index );
+// 			// get resource url list
+// 			$sync_info_list = $this->_sync_info_model->get_sync_info_list( $pagination );
+			
+// 			foreach ( $sync_info_list as $sync_info ) {
+// 				$this->log->resource("[MERGE] resource Url: " . $sync_info["RESOURCE"] . " (M-ID: " . $merge_id . ")");
+// 				$this->merge_url_data( $sync_info["RESOURCE"] );
+// 				// remove merged resource url
+// 				$this->log->resource("[DELETE] resource Url: " . $sync_info["RESOURCE"] . " (M-ID: " . $merge_id . ")");
+// 				$this->_sync_info_model->delete_sync_info( $sync_info["SYNC_ID"] );
+// 			}
+			
+// 			if ( sizeof( $sync_info_list ) == 0 ) {
+// 				$do_loop = false;
+// 			}
+// 			$loop_index++;
+// 		}
+// 		$this->log->resource("[END] merge resource data (M-ID: " . $merge_id . ")");
+// 	}
+	
+	private function merge_url_data($external_file_url, $media_types = NULL)
 	{
-		$this->log->info("SYNC START merge url data : " . $external_file_url);
+		$this->log->info("[START SYNC] merge url data : " . $external_file_url);
 		$parts = explode('/', $external_file_url);
 		if ( sizeof($parts) > 0 )
 		{
 			$file_name = end($parts);
-			$internal_file_path = ROOT . "tmp/" . $file_name . "." . date("YmdHis");
-				
+			$download_file_path = ROOT . "tmp/" . $file_name . "." . date("YmdHis");
+			$this->log->info("[READ] SYNC data media_types: " . var_export($media_types, true));
+			
 			$file_model = new File_Model();
-			$this->log->info("DOWNLOAD SYNC url data : (external) " . $external_file_url . " as (internal) " . $internal_file_path);
-			$file_model->download_external_file($external_file_url, $internal_file_path);
-			$this->log->info("MERGE SYNC data from (external) " . $external_file_url);
-			$file_model->merge_msp_data($internal_file_path);
-			$this->log->info("REMOVE SYNC downloaded file : (internal) " . $internal_file_path);
-			$file_model->remove_file($internal_file_path);
+			$this->log->info("[DOWNLOAD] SYNC url data : (external) " . $external_file_url . " as (internal) " . $download_file_path);
+// 			$file_model->download_external_file($external_file_url, $internal_file_path);
+			$sb_media_type = new String_Builder();
+			foreach ( $media_types as $media_type ) {
+				$sb_media_type->append($media_type . ",");
+			}
+			$headers = array(
+					'Accept: ' . rtrim($sb_media_type->to_string(), ",")
+			);
+			$file_model->download_url_data($external_file_url, $headers, $download_file_path);
+			$this->log->info("[MERGE] SYNC downloaded file : " . $download_file_path);
+			$file_model->merge_msp_data($download_file_path);
+			$this->log->info("[REMOVE] SYNC downloaded file : " . $download_file_path);
+			$file_model->remove_file($download_file_path); 
+			
 		}
-		$this->log->info("SYNC END merge url data : " . $external_file_url);
+		$this->log->info("[END SYNC] merge url data : " . $external_file_url);
 	}
 
 }

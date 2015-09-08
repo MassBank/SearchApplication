@@ -2,7 +2,6 @@
 
 include_once APP . 'entity/constant/file/keyword.php';
 include_once APP . 'entity/constant/db/column.php';
-include_once APP . '/model/log/log4massbank.php';
 
 class File_Model extends Model
 {
@@ -25,6 +24,26 @@ class File_Model extends Model
 		$this->_ms_model = $this->get_ms_model();
 		$this->_peak_model = $this->get_peak_model();
 		$this->log = new Log4Massbank();
+	}
+	
+	public function download_url_data($url, $headers, $download_file_path, $timeout = 60) 
+	{
+		$output = false;
+		if ( function_exists('curl_init') ) {
+			$fp = fopen ( $download_file_path, "w+" );
+			$ch = curl_init();
+			curl_setopt( $ch, CURLOPT_URL, $url );
+			curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
+			curl_setopt( $ch, CURLOPT_TIMEOUT, $timeout );
+	        curl_setopt( $ch, CURLOPT_HTTPHEADER, $headers );
+	        curl_setopt( $ch, CURLOPT_FILE, $fp );
+			$output = curl_exec( $ch );
+			curl_close( $ch );
+			fclose( $fp );
+		} else {
+			$this->log->error("cURL is not installed");
+		}
+		return $output;
 	}
 	
 	public function download_external_file($external_file_url, $internal_file_path)
@@ -323,6 +342,62 @@ class File_Model extends Model
 		}
 	
 		return $atom_list;
+	}
+	
+	private function get_headers_x($url,$format=0, $user='', $pass='', $referer='') {
+		if (!empty($user)) {
+			$authentification = base64_encode($user.':'.$pass);
+			$authline = "Authorization: Basic $authentification\r\n";
+		}
+	
+		if (!empty($referer)) {
+			$refererline = "Referer: $referer\r\n";
+		}
+	
+		$url_info=parse_url($url);
+		$port = isset($url_info['port']) ? $url_info['port'] : 80;
+		$fp=fsockopen($url_info['host'], $port, $errno, $errstr, 30);
+		if($fp) {
+			$head = "GET ".@$url_info['path']."?".@$url_info['query']." HTTP/1.0\r\n";
+			if (!empty($url_info['port'])) {
+				$head .= "Host: ".@$url_info['host'].":".$url_info['port']."\r\n";
+			} else {
+				$head .= "Host: ".@$url_info['host']."\r\n";
+			}
+			$head .= "Connection: Close\r\n";
+			$head .= "Accept: */*\r\n";
+			$head .= $refererline;
+			$head .= $authline;
+			$head .= "\r\n";
+	
+			fputs($fp, $head);
+			while(!feof($fp) or ($eoheader==true)) {
+				if($header=fgets($fp, 1024)) {
+					if ($header == "\r\n") {
+						$eoheader = true;
+						break;
+					} else {
+						$header = trim($header);
+					}
+	
+					if($format == 1) {
+						$key = array_shift(explode(':',$header));
+						if($key == $header) {
+							$headers[] = $header;
+						} else {
+							$headers[$key]=substr($header,strlen($key)+2);
+						}
+						unset($key);
+					} else {
+						$headers[] = $header;
+					}
+				}
+			}
+			return $headers;
+	
+		} else {
+			return false;
+		}
 	}
 	
 }

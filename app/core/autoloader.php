@@ -1,42 +1,25 @@
 <?php
 
-require_once APP . '/model/log/log4massbank.php';
 require_once APP . '/config/config.php';
 require_once APP . '/core/error.php';
 
 function massbank_autoloader($class)
 {
-	
-	$filename = APP . "/controller/" . strtolower ( $class ) . ".php";
+	include_class_file("/controller/", $class);
+	include_class_file("/core/", $class);
+	include_class_file("/exception/", $class);
+	include_class_file("/model/util/", $class);
+	include_class_file("/model/service/", $class);
+	include_class_file("/entity/param/", $class);
+	include_class_file("/model/log/", $class);
+}
+
+function include_class_file($dir, $class)
+{
+	$filename = APP . $dir . strtolower ( $class ) . ".php";
 	if (file_exists ( $filename )) {
-		require $filename;
+		require_once $filename;
 	}
-	
-	$filename = APP . "/core/" . strtolower ( $class ) . ".php";
-	if (file_exists ( $filename )) {
-		require $filename;
-	}
-	
-	$filename = APP . "/exception/" . strtolower ( $class ) . ".php";
-	if (file_exists ( $filename )) {
-		require $filename;
-	}
-	
-	$filename = APP . "/model/util/" . strtolower ( $class ) . ".php";
-	if (file_exists ( $filename )) {
-		require $filename;
-	}
-	
-	$filename = APP . "/model/service/" . strtolower ( $class ) . ".php";
-	if (file_exists ( $filename )) {
-		require $filename;
-	}
-	
-	$filename = APP . "/entity/param/" . strtolower ( $class ) . ".php";
-	if (file_exists ( $filename )) {
-		require $filename;
-	}
-	
 }
 
 function massbank_error_handler($num, $str, $file, $line, $context = null)

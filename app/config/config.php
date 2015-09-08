@@ -57,7 +57,7 @@ date_default_timezone_set("Japan");
  */
 define('URL_PUBLIC_FOLDER', 'public');
 define('URL_PROTOCOL', 'http://');
-define('URL_DOMAIN', $_SERVER['HTTP_HOST']);
+define('URL_DOMAIN', isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : NULL);
 define('URL_SUB_FOLDER', str_replace(URL_PUBLIC_FOLDER, '', dirname($_SERVER['SCRIPT_NAME'])));
 define('URL', URL_PROTOCOL . URL_DOMAIN . URL_SUB_FOLDER);
 /**
@@ -66,17 +66,20 @@ define('URL', URL_PROTOCOL . URL_DOMAIN . URL_SUB_FOLDER);
  */
 define('DB_TYPE', 'mysql');
 define('DB_CHARSET', 'utf8');
-// define('DB_HOST', '<database host>');
-// define('DB_NAME', '<database name>');
-// define('DB_USER', '<database user>');
-// define('DB_PASS', '<database password>');
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'mbsearchapidb3');
-define('DB_USER', 'root');
-define('DB_PASS', 'abcd1234');
+define('DB_HOST', '<database host>');
+define('DB_NAME', '<database name>');
+define('DB_USER', '<database user>');
+define('DB_PASS', '<database password>');
 
 define('LOG_FILE_PREFIX', 'massbankapi');
 define('LOG_FILE_FOLDER', ROOT . 'log/');
+
+# Some unique ID
+define('QUEUE_KEY', 12345);
+
+# Different type of actions
+define('QUEUE_TYPE_START', 1);
+define('QUEUE_TYPE_END', 2);
 
 define('SITETITLE', 'MassBank | Database');
 
