@@ -28,7 +28,7 @@ class Data extends Controller
 	
 	private $_url_data_merge = 'http://git.localhost/mbsearchapi/data/merge';
 	
-	public function __construct(){
+	public function __construct() {
 		parent::__construct();
 		$this->log = new Log4Massbank();
 	}
@@ -64,47 +64,62 @@ class Data extends Controller
 
 	public function sync() 
 	{
-		foreach (getallheaders() as $name => $value) {
-			$this->log->info("header: $name => $value");
-		}
-		$post_body = file_get_contents( 'php://input' );
-		$body_json = json_decode( $post_body, TRUE );
-		$this->log->info("req-body: " . $post_body);
+		$content_type = $this->get_header_value( "Content-Type" );
 		
-		$sync_id = date('Ymdhis');
-		$this->log->resource("[START] data synchronization (S-ID: " . $sync_id . ")");
+		if ( strcmp($content_type, "application/hal+json") == 0 ) 
+		{
+			// read request data content
+			$this->log->info("[HEADER] post header: " . $content_type);
+			$post_body = file_get_contents( 'php://input' );
+			$body_json = json_decode( $post_body, TRUE );
+			$this->log->info("[CONTENT] post body content: " . $post_body);
+			// start data synchronization
+			$sync_id = date('Ymdhis');
+			
+			$this->log->resource("[START] data synchronization (Sync-ID: " . $sync_id . ")");
+			// event values
+			$repository = $body_json["name"];
+			$media_types = $body_json["media_types"];
+			$updated = $body_json["updated"];
+			$resources = $body_json["resources"];
+			
+			$index = 1;
+			foreach ( $resources as $resource )
+			{
+				$key = round(microtime(true) * 1000) . $index;
+				$data = array(
+					'time' => time(),
+					'key' => $key,
+					'repository' => $repository,
+					'resource' => $resource,
+					'media_types' => $media_types,
+					'updated' => $updated,
+					'host-url' => URL
+				);
+				$this->log->info("[START] add message queue");
+				MqQueue::addMessage($key, $data);
+				$this->log->info("[END] add message queue");
+				$index++;
+			}
+			// call shell script via PHP
+			$this->log->info("[START] run monitor shell script");
+			shell_exec( "/bin/sh " . ROOT . "public/monitor.sh" );
+			$this->log->info("[END] run monitor shell script");
+			
+			$this->log->resource("[END] data synchronization (Sync-ID: " . $sync_id . ")");
+		} else {
+			$this->log->error("[HEADER] No valid json header value");
+			$this->log->info("--- Request header list ---");
+			foreach ( getallheaders() as $name => $value ) {
+				$this->log->info("[HEADER] $name => $value");
+			}
+		}
+		
 		
 // 		// call /sync URL
 // 		$url = 'http://git.localhost/webhook/event.json';
 // 		$obj = json_decode( file_get_contents($url), true );
 		
-		// event values
-		$repository = $body_json["name"];
-		$media_types = $body_json["media_types"];
-		$updated = $body_json["updated"];
-		
-		$index = 1;
-		foreach ( $body_json["resources"] as $resource )
-		{
-			$key = round(microtime(true) * 1000) . $index;
-			$data = array(
-				'time' => time(),
-				'key' => $key,
-				'repository' => $repository,
-				'resource' => $resource,
-				'media_types' => $media_types,
-				'updated' => $updated,
-				'host-url' => URL
-			);
-			$this->log->info("[START] add Mq Message");
-			MqQueue::addMessage($key, $data);
-			$this->log->info("[END] add Mq Message");
-			$index++;
-		}
-		// call shell script via PHP
-		$this->log->info("[START] run monitor shell script");
-		shell_exec( "/bin/sh " . ROOT . "public/monitor.sh" );
-		$this->log->info("[END] run monitor shell script");
 
 		/* 
 		
@@ -129,7 +144,6 @@ class Data extends Controller
 		
 		*/
 		
-		$this->log->resource("[END] data synchronization (S-ID: " . $sync_id . ")");
 	}
 	
 	public function merge_resource() {
@@ -183,26 +197,34 @@ class Data extends Controller
 		{
 			$file_name = end($parts);
 			$download_file_path = ROOT . "tmp/" . $file_name . "." . date("YmdHis");
-			$this->log->info("[READ] SYNC data media_types: " . var_export($media_types, true));
 			
-			$file_model = new File_Model();
-			$this->log->info("[DOWNLOAD] SYNC url data : (external) " . $external_file_url . " as (internal) " . $download_file_path);
-// 			$file_model->download_external_file($external_file_url, $internal_file_path);
+			$this->log->info("[READ] sync data media_types: " . var_export($media_types, true));
 			$sb_media_type = new String_Builder();
 			foreach ( $media_types as $media_type ) {
 				$sb_media_type->append($media_type . ",");
 			}
-			$headers = array(
-					'Accept: ' . rtrim($sb_media_type->to_string(), ",")
-			);
-			$file_model->download_url_data($external_file_url, $headers, $download_file_path);
-			$this->log->info("[MERGE] SYNC downloaded file : " . $download_file_path);
-			$file_model->merge_msp_data($download_file_path);
-			$this->log->info("[REMOVE] SYNC downloaded file : " . $download_file_path);
-			$file_model->remove_file($download_file_path); 
+			$headers = array( 'Accept: ' . rtrim($sb_media_type->to_string(), ",") );
 			
+			$file_model = new File_Model();
+			$this->log->info("[DOWNLOAD] sync url data : (external) " . $external_file_url . " as (internal) " . $download_file_path);
+			$file_model->download_url_data($external_file_url, $headers, $download_file_path);
+			$this->log->info("[MERGE] sync downloaded file : " . $download_file_path);
+			$file_model->merge_msp_data($download_file_path);
+			$this->log->info("[REMOVE] sync downloaded file : " . $download_file_path);
+			$file_model->remove_file($download_file_path); 
 		}
 		$this->log->info("[END SYNC] merge url data : " . $external_file_url);
+	}
+	
+	private function get_header_value($field)
+	{
+// 		$this->log->info("header: $name => $value");
+		foreach ( getallheaders() as $name => $value ) {
+			if ( strcmp($field, $name) == 0 ) {
+				return $value;
+			}
+		}
+		return NULL;
 	}
 
 }
