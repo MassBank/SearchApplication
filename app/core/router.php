@@ -76,7 +76,7 @@ class Router
                         
                         //try to load and instantiate model     
                         if(file_exists($file)){
-                            require $file;
+                            require_once $file;
                         }
 
                         //grab all parts based on a / separator 

@@ -12,6 +12,7 @@ class Log4Massbank {
 	private $LOGFILE_WARNING;
 	private $LOGFILE_DEBUG;
 	private $LOGFILE_SYNC;
+	private $LOGFILE_SQL;
 	
 	private $starttime;
 	
@@ -24,6 +25,7 @@ class Log4Massbank {
 		$this->LOGFILE_WARNING = $this->get_logfile_path( "warning" );
 		$this->LOGFILE_DEBUG = $this->get_logfile_path( "debug" );
 		$this->LOGFILE_SYNC = $this->get_logfile_path( "sync" );
+		$this->LOGFILE_SQL = $this->get_logfile_path( "sql" );
 	}
 	
 	private function get_logfile_path($type) {
@@ -71,6 +73,11 @@ class Log4Massbank {
 	public function resource($message)
 	{
 		$this->log( 'SYNC', $message, $this->LOGFILE_SYNC );
+	}
+
+	public function sql($message)
+	{
+		$this->log( 'SQL', $message, $this->LOGFILE_SQL );
 	}
 	
 	private function log($log_level, $message, $file)

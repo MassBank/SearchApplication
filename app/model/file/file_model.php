@@ -89,7 +89,10 @@ class File_Model extends Model
 		{
 			$line = fgets( $handle );
 			
-			if ( empty(trim( $line )) && !empty($tbl_compound) ) {
+			//if ( empty(trim( $line )) && !empty($tbl_compound) ) {
+// 			$this->log->info("[LINE] $line");
+			if ( strlen( trim( $line ) ) == 0 && !empty($tbl_compound) ) {
+// 				$this->log->info("[BREAK] break reading");
 				$count++;
 				
 				// insert or update compound data into database
@@ -173,21 +176,36 @@ class File_Model extends Model
 			}
 		// peak
 		} else if ( $this->is_peak_lines ) {
-			$peak_line = trim($line);
-			if ( !empty ($peak_line) )
+			$peak_lines_str = trim($line);
+			$peak_lines = explode(";", $peak_lines_str);
+			
+			foreach ($peak_lines as $peak_line)
 			{
-				$peak_reads = explode("\t", $peak_line);
-				if ( sizeof($peak_reads) > 1 ) {
-					if ($this->max_inte < $peak_reads[1]) {
-						$this->max_inte = $peak_reads[1];
+				$peak_line = trim( $peak_line );
+				if ( !empty ($peak_line) )
+				{
+					$peak_reads = explode("\t", $peak_line);
+					
+					if ( sizeof($peak_reads) < 2 ) {
+						$peak_reads = explode(" ", $peak_line);
 					}
-					$tbl_peaks[] = array(
-							Column::PEAK_MZ => $peak_reads[0],
-							Column::PEAK_INTENSITY => $peak_reads[1]
-					);
-				} else {
-					$this->log->error( "Invalid peak line: " . $peak_line . " : peak should contain two values seperated by tab.");
+					
+					if ( sizeof($peak_reads) > 1 ) {
+						$pMz = trim( $peak_reads[0] );
+						$pRelInt = intval( trim( $peak_reads[1] ) );
+						if ($this->max_inte < $pRelInt) {
+							$this->max_inte = $pRelInt;
+						}
+						$tbl_peaks[] = array(
+								Column::PEAK_MZ => $pMz,
+								Column::PEAK_INTENSITY => $pRelInt
+						);
+					} else {
+						
+						$this->log->error( "Invalid peak line: " . $peak_line . " : peak should contain two values seperated by tab.");
+					}
 				}
+				
 			}
 		}
 		
@@ -199,15 +217,26 @@ class File_Model extends Model
 	private function merge_into_database(&$tbl_compound, &$tbl_compound_names, &$tbl_instrument, &$tbl_ms, &$tbl_peaks)
 	{
 		
-		if ( empty( $tbl_ms[Column::MS_TYPE_NAME] ) || empty( $tbl_instrument['INSTRUMENT_TYPE'] ) ) {
+		if ( empty( $tbl_ms[Column::MS_TYPE_NAME] ) ) {
+			$this->log->error( "empty ms type for " . $tbl_compound[Column::COMPOUND_ID] );
+		}
+		
+		if ( empty( $tbl_instrument['INSTRUMENT_TYPE'] ) ) {
+			$this->log->error( "empty instrument for " . $tbl_compound[Column::COMPOUND_ID] );
+		}
+		
+// 		if ( empty( $tbl_ms[Column::MS_TYPE_NAME] ) || empty( $tbl_instrument['INSTRUMENT_TYPE'] ) ) {
 			
-			$this->log->error( "empty ms type or instrument for " . $tbl_compound[Column::COMPOUND_ID] );
+// 			$this->log->error( "empty ms type or instrument for " . $tbl_compound[Column::COMPOUND_ID] );
 			
-		} else {
+// 		} else {
 			
 			foreach ($tbl_peaks as $key => $tbl_peak) {
 				$tbl_peaks[$key][Column::PEAK_RELATIVE_INTENSITY] = intval ( ($tbl_peak[Column::PEAK_INTENSITY] / $this->max_inte) * 999 );
 			}
+			
+			$instrument = NULL;
+			$ms = NULL;
 			
 			// insert data into database
 			
@@ -234,35 +263,46 @@ class File_Model extends Model
 				}
 			}
 			
-			if ( isset($tbl_compound) && isset($ms) && isset($instrument) )
+// 			if ( isset($tbl_compound) && isset($ms) && isset($instrument) )
+			if ( isset($instrument) )
 			{
-				$this->_compound_model->merge(
-						$tbl_compound[Column::COMPOUND_ID],
-						$tbl_compound[Column::COMPOUND_TITLE],
-						$tbl_compound[Column::COMPOUND_FORMULA],
-						$tbl_compound[Column::COMPOUND_EXACT_MASS],
-						$tbl_compound[Column::COMPOUND_ION_MODE],
-						array_key_exists(Column::PUBCHEM_ID, $tbl_compound)? $tbl_compound[Column::PUBCHEM_ID]: NULL,
-						array_key_exists(Column::PUBCHEM_ID_TYPE, $tbl_compound)? $tbl_compound[Column::PUBCHEM_ID_TYPE]: NULL,
-						$instrument[Column::INSTRUMENT_ID],
-						$ms[Column::MS_TYPE_ID],
-						date('Y-m-d H:i:s'),
-						date('Y-m-d H:i:s')
-				);
-			
-				foreach ($tbl_compound_names[Column::COMPOUND_NAME_NAME] as $compound_name) {
-					$this->_compound_name_model->merge(
-							$tbl_compound[Column::COMPOUND_ID],
-							$compound_name
-					);
+				
+				$is_valid = TRUE;
+				if ( ! array_key_exists(Column::COMPOUND_FORMULA, $tbl_compound) ) {
+					$this->log->error("no formula information. " . var_export($tbl_compound, true));
+					$is_valid = FALSE;
 				}
-		
-				$this->_peak_model->delete_peaks_by_compound_id($tbl_compound[Column::COMPOUND_ID]);
-				$this->_peak_model->bulk_insert($tbl_peaks, $tbl_compound[Column::COMPOUND_ID]);
+				
+				if ( $is_valid ) 
+				{
+					$this->_compound_model->merge(
+							$tbl_compound[Column::COMPOUND_ID],
+							$tbl_compound[Column::COMPOUND_TITLE],
+							$tbl_compound[Column::COMPOUND_FORMULA],
+							$tbl_compound[Column::COMPOUND_EXACT_MASS],
+							$tbl_compound[Column::COMPOUND_ION_MODE],
+							array_key_exists(Column::PUBCHEM_ID, $tbl_compound)? $tbl_compound[Column::PUBCHEM_ID]: NULL,
+							array_key_exists(Column::PUBCHEM_ID_TYPE, $tbl_compound)? $tbl_compound[Column::PUBCHEM_ID_TYPE]: NULL,
+							!empty($instrument)? $instrument[Column::INSTRUMENT_ID]: NULL,
+							!empty($ms) ? $ms[Column::MS_TYPE_ID]: NULL,
+							date('Y-m-d H:i:s'),
+							date('Y-m-d H:i:s')
+					);
+				
+					foreach ($tbl_compound_names[Column::COMPOUND_NAME_NAME] as $compound_name) {
+						$this->_compound_name_model->merge(
+								$tbl_compound[Column::COMPOUND_ID],
+								$compound_name
+						);
+					}
+			
+					$this->_peak_model->delete_peaks_by_compound_id($tbl_compound[Column::COMPOUND_ID]);
+					$this->_peak_model->bulk_insert($tbl_peaks, $tbl_compound[Column::COMPOUND_ID]);
+				}
 	
 			}
 			
-		}
+// 		}
 		
 	}
 	

@@ -69,22 +69,27 @@ class Quick_Search_Keyword_Model extends Abstract_Search_Model
 	
 	protected function get_output($compounds = NULL)
 	{
-		if ( !empty($compounds) ) {
+		if ( !empty($compounds) ) 
+		{
 			foreach ($compounds as $compound)
 			{
-				$data[] = array(
-					'compound_id' => $compound[Column::COMPOUND_ID],
-					'title' => $compound[Column::COMPOUND_TITLE],
-					'ion_mode' => $this->get_value($compound[Column::COMPOUND_ION_MODE]),
-					'formula' => $compound[Column::COMPOUND_FORMULA],
-					'pubchem' => array(
-							"id" => $compound[Column::PUBCHEM_ID],
-							"type" => $this->get_db_value($compound, Column::PUBCHEM_ID_TYPE)
-					),
-					'exact_mass' => $this->get_value($compound[Column::COMPOUND_EXACT_MASS])
-				);
+				if ( !empty($compound[Column::COMPOUND_ID]) )
+				{
+					$data[] = array(
+						'compound_id' => $compound[Column::COMPOUND_ID],
+						'title' => $compound[Column::COMPOUND_TITLE],
+						'ion_mode' => $this->get_value($compound[Column::COMPOUND_ION_MODE]),
+						'formula' => $compound[Column::COMPOUND_FORMULA],
+						'pubchem' => array(
+								"id" => $compound[Column::PUBCHEM_ID],
+								"type" => $this->get_db_value($compound, Column::PUBCHEM_ID_TYPE)
+						),
+						'exact_mass' => $this->get_value($compound[Column::COMPOUND_EXACT_MASS])
+					);
+				}
 			}
-		} else {
+		}
+		if ( !isset($data) ) {
 			$data = array();
 		}
 		return $data;

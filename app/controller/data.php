@@ -14,7 +14,8 @@ require_once APP . '/controller/data.php';
 
 class Data extends Controller
 {
-
+	private static $sync_status = "RUN";
+	
 	private $sync_file_count = 20;
 	private $_instrument_model;
 	private $_ms_model;
@@ -33,117 +34,186 @@ class Data extends Controller
 		$this->log = new Log4Massbank();
 	}
 	
-	public function index()
+	public function refresh()
 	{
-
+		$this->log->info("[START] refresh search api content");
 		$params = $this->parse_query_str();
-		$dir_path = $this->GET_PARAM("dir", $params); // 'C:/Apps/Documents/Projects/proj-massbank/massbankrecord'
+		
 		$is_drop_tables = $this->GET_PARAM("drop_tables", $params);
 		$is_delete_all = $this->GET_PARAM("delete_all", $params);
-		$sync_file_count = $this->GET_PARAM("sync_file_count", $params);
+		
+		$username = $this->GET_PARAM("username", $params);
+		$password = $this->GET_PARAM("password", $params);
 
+		if ( strcmp($username, DB_USER) == 0 && strcmp($password, DB_PASS) == 0 )
+		{
+			$data_model = new Data_Model();
+	
+			if ( $is_drop_tables ) 
+			{
+				$this->log->info("[START] recreate search api database");
+				$data_model->drop_tables();
+				$data_model->create_table_if_not_exists();
+				$this->log->info("[END] recreate search api database");
+			}
+	
+			if ( $is_delete_all )
+			{
+				$this->log->info("[START] delete search api all data");
+				$data_model->delete_all();
+				$this->log->info("[END] delete search api all data");
+			}
+		} else {
+			$this->log->error("invalid username or password");
+		}
+		$this->log->info("[END] refresh search api content");
+	}
+	
+	public function merge_dir_data()
+	{
+		$params = $this->parse_query_str();
+		$dir_path = $this->GET_PARAM("dir", $params); // 'C:/Apps/Documents/Projects/proj-massbank/massbankrecord'
+		$sync_file_count = $this->GET_PARAM("sync_file_count", $params);
+		
+		$username = $this->GET_PARAM("username", $params);
+		$password = $this->GET_PARAM("password", $params);
+		
 		if ( empty($dir_path) ) {
+			$this->log->error("invalid directory path");
 			return;
 		}
-
-		$data_model = new Data_Model();
-
-		if ( $is_drop_tables ) 
+		
+		if ( strcmp($username, DB_USER) == 0 && strcmp($password, DB_PASS) == 0 )
 		{
-			$data_model->drop_tables();
+			$data_model = new Data_Model();
+			$data_model->create_table_if_not_exists();
+			$data_model->merge_file_data($dir_path, $sync_file_count);
+		} else {
+			$this->log->error("invalid username or password");
 		}
-
-		if ( $is_delete_all )
-		{
-			$data_model->delete_all();
-		}
-
-		$data_model->create_table_if_not_exists();
-		$data_model->merge_file_data($dir_path, $sync_file_count);
 	}
 
+	public function synctest()
+	{
+		$remote_url = "http://49.212.184.212/mnn-2/projects/rfmejia/massbank_ms2n_curated/resources";
+		$this->sync_db_with_url($remote_url);
+	}
+	
+	private function sync_db_with_url($remote_url)
+	{
+		$this->set_sync_status();
+		
+		$i = 0;
+		if ( $this->is_run_status() )
+		{
+			$this->log->info("[START sync]");
+			do {
+				$remote_url = $this->read_publisher_body_content($remote_url);
+				$this->run_resource_monitor_script();
+				$do_loop = !empty($remote_url) && $this->is_run_status(); // do loop if has next url
+				$i++;
+			} while ($do_loop);
+			$this->log->info("[END sync]");
+		} else {
+			$this->log->info("[STOP] sync process forcely stopped.");
+		}
+	}
+	
 	public function sync() 
 	{
-		$content_type = $this->get_header_value( "Content-Type" );
-		
-		if ( strcmp($content_type, "application/hal+json") == 0 ) 
+		$this->log->info("[START] sync");
+		$post_body = file_get_contents( 'php://input' );
+		$body_json = json_decode( $post_body, TRUE );
+		$representations = $body_json["data"]["links"]["representations"];
+		$index = 1;
+		foreach ( $representations as $representation )
 		{
-			// read request data content
-			$this->log->info("[HEADER] post header: " . $content_type);
-			$post_body = file_get_contents( 'php://input' );
-			$body_json = json_decode( $post_body, TRUE );
-			$this->log->info("[CONTENT] post body content: " . $post_body);
-			// start data synchronization
-			$sync_id = date('Ymdhis');
-			
-			$this->log->resource("[START] data synchronization (Sync-ID: " . $sync_id . ")");
-			// event values
-			$repository = $body_json["name"];
-			$media_types = $body_json["media_types"];
-			$updated = $body_json["updated"];
-			$resources = $body_json["resources"];
-			
-			$index = 1;
-			foreach ( $resources as $resource )
+			$key = round(microtime(true) * 1000) . $index;
+			$media_type = $representation["media_type"];
+			$hrefs = $representation["href"];
+			foreach ( $hrefs as $href )
 			{
-				$key = round(microtime(true) * 1000) . $index;
-				$data = array(
-					'time' => time(),
-					'key' => $key,
-					'repository' => $repository,
-					'resource' => $resource,
-					'media_types' => $media_types,
-					'updated' => $updated,
-					'host-url' => URL
-				);
-				$this->log->info("[START] add message queue");
-				MqQueue::addMessage($key, $data);
-				$this->log->info("[END] add message queue");
+				$this->add_resource_to_mq($key, $href, $media_type);
 				$index++;
 			}
-			// call shell script via PHP
-			$this->log->info("[START] run monitor shell script");
-			shell_exec( "/bin/sh " . ROOT . "public/monitor.sh" );
-			$this->log->info("[END] run monitor shell script");
+		}
+		$this->run_resource_monitor_script();
+		$this->log->info("[END] sync");
+		
+// 		// TODO set same as in test
+// 		$this->set_sync_status();
+		
+// 		if ( $this->is_run_status() )
+// 		{
+// 			$this->log->info("[START sync]");
 			
-			$this->log->resource("[END] data synchronization (Sync-ID: " . $sync_id . ")");
-		} else {
-			$this->log->error("[HEADER] No valid json header value");
-			$this->log->info("--- Request header list ---");
-			foreach ( getallheaders() as $name => $value ) {
-				$this->log->info("[HEADER] $name => $value");
-			}
-		}
-		
-		
-// 		// call /sync URL
-// 		$url = 'http://git.localhost/webhook/event.json';
-// 		$obj = json_decode( file_get_contents($url), true );
-		
-
-		/* 
-		
- 		if ( empty($this->_sync_info_model) ) {
- 			$this->_sync_info_model = new Sync_Info_Model();
- 			$this->_sync_info_model->create_table_if_not_exists();
- 		}
- 
-		// save response urls into text file
-		foreach ( $obj["resources"] as $resource ) {
-			$timestamp = date('Y-m-d H:i:s');
-			$this->log->resource("[RECEIVED] sync details (S-ID: " . $sync_id . ") --> (resource): " . $resource . ", (media_type): " . $media_type . ", (updated): " . $updated);
-			$this->_sync_info_model->insert($repository, $resource, $media_type, $updated, $timestamp);
-		}
-		if ( !isset($GLOBALS['process']) || !$GLOBALS['process']->isRunning() ) {
-			$GLOBALS['process'] = new BackgroundProcess("wget --header='Content-Type: application/hal+json' " . $this->_url_data_merge);
-			$GLOBALS['process']->run();
-			$this->log->resource("[RUN] background process (PID: " . $GLOBALS['process']->getPid() . ") for merge"); // PID create after start process
-		} else {
-			$this->log->resource("[ON GOING] background process (PID: " . $GLOBALS['process']->getPid() . ") for merge");
-		} 
-		
-		*/
-		
+// 			$content_type = $this->get_header_value( "Content-Type" );
+			
+// 			if ( strcmp($content_type, "application/json") == 0 || strcmp($content_type, "application/hal+json") == 0 ) 
+// 			{
+// 				// read request data content
+// 				$this->log->info("[HEADER] post header: " . $content_type);
+// 				$post_body = file_get_contents( 'php://input' );
+// 				$body_json = json_decode( $post_body, TRUE );
+// 				$this->log->info("[CONTENT] post body content: " . $post_body);
+// 				// start data synchronization
+// 				$sync_id = date('Ymdhis');
+				
+// 				$this->log->resource("[START] data synchronization (Sync-ID: " . $sync_id . ")");
+// 				// event values
+// 				$resources = $body_json["resources"];
+// 				$media_types = $body_json["media_types"];
+				
+// 				$index = 1;
+// 				foreach ( $resources as $resource )
+// 				{
+// 					$key = round(microtime(true) * 1000) . $index;
+// 					$this->add_resource_to_mq($key, $resource, $media_types);
+// 					$index++;
+// 				}
+// 				// call shell script via PHP
+// 				$this->run_resource_monitor_script();
+				
+// 				$this->log->resource("[END] data synchronization (Sync-ID: " . $sync_id . ")");
+// 			} else {
+// 				$this->log->error("[HEADER] No valid json header value");
+// 				$this->log->info("--- Request header list ---");
+// 				foreach ( getallheaders() as $name => $value ) {
+// 					$this->log->info("[HEADER] $name => $value");
+// 				}
+// 			}
+			
+			
+// 	// 		// call /sync URL
+// 	// 		$obj = json_decode( file_get_contents($url), true );
+			
+	
+// 			/* 
+			
+// 	 		if ( empty($this->_sync_info_model) ) {
+// 	 			$this->_sync_info_model = new Sync_Info_Model();
+// 	 			$this->_sync_info_model->create_table_if_not_exists();
+// 	 		}
+	 
+// 			// save response urls into text file
+// 			foreach ( $obj["resources"] as $resource ) {
+// 				$timestamp = date('Y-m-d H:i:s');
+// 				$this->log->resource("[RECEIVED] sync details (S-ID: " . $sync_id . ") --> (resource): " . $resource . ", (media_type): " . $media_type . ", (updated): " . $updated);
+// 				$this->_sync_info_model->insert($repository, $resource, $media_type, $updated, $timestamp);
+// 			}
+// 			if ( !isset($GLOBALS['process']) || !$GLOBALS['process']->isRunning() ) {
+// 				$GLOBALS['process'] = new BackgroundProcess("wget --header='Content-Type: application/hal+json' " . $this->_url_data_merge);
+// 				$GLOBALS['process']->run();
+// 				$this->log->resource("[RUN] background process (PID: " . $GLOBALS['process']->getPid() . ") for merge"); // PID create after start process
+// 			} else {
+// 				$this->log->resource("[ON GOING] background process (PID: " . $GLOBALS['process']->getPid() . ") for merge");
+// 			} 
+			
+// 			*/
+// 			$this->log->info("[END sync]");
+// 		} else {
+// 			$this->log->info("[STOP] sync process forcely stopped.");
+// 		}
 	}
 	
 	public function merge_resource() {
@@ -188,12 +258,73 @@ class Data extends Controller
 // 		}
 // 		$this->log->resource("[END] merge resource data (M-ID: " . $merge_id . ")");
 // 	}
+
+	private function set_sync_status() 
+	{
+		$params = $this->parse_query_str();
+		$param_status = $this->GET_PARAM("status", $params);
+		if ( isset($param_status) && !empty($param_status) ) {
+			$this::$sync_status = strtoupper( $param_status );
+		} else {
+			$this::$sync_status = "RUN";
+		}
+	}
+	
+	private function is_run_status()
+	{
+		return strcmp($this::$sync_status, "RUN") == 0;
+	}
+	
+	private function read_publisher_body_content($json_url)
+	{
+		$this->log->info("[READ] read publisher url: " . $json_url);
+		$body_str = file_get_contents($json_url);
+		$body_json = json_decode( $body_str, TRUE );
+		
+		$representations = $body_json["links"]["representations"];
+		$index = 1;
+		foreach ( $representations as $representation )
+		{
+			$key = round(microtime(true) * 1000) . $index;
+			$this->add_resource_to_mq($key, $representation["href"], $representation["media_type"]);
+			$index++;
+		}
+		
+		$nxt_url = isset($body_json["links"]["next"]) ? $body_json["links"]["next"]: NULL;
+		$this->log->info("[NEXT] read next publisher url: " . $nxt_url);
+		return $nxt_url;
+	}
+
+	private function add_resource_to_mq($key, $resource, $media_types)
+	{
+		$this->log->info("[START] add message queue");
+		if( !is_array($media_types) ) {
+			$media_types = explode(" ", $media_types);
+		}
+		$data = array(
+				'time' => time(),
+				'key' => $key,
+				'resource' => $resource,
+				'media_types' => $media_types,
+				'host-url' => URL
+		);
+		MqQueue::addMessage($key, $data);
+		$this->log->info("[END] add message queue");
+	}
+	
+	private function run_resource_monitor_script() 
+	{
+		// call shell script via PHP
+		$this->log->info("[START] run monitor shell script");
+		shell_exec( "/bin/sh " . ROOT . "public/monitor.sh" );
+		$this->log->info("[END] run monitor shell script");
+	}
 	
 	private function merge_url_data($external_file_url, $media_types = NULL)
 	{
 		$this->log->info("[START SYNC] merge url data : " . $external_file_url);
 		$parts = explode('/', $external_file_url);
-		if ( sizeof($parts) > 0 )
+		if ( $this->is_run_status() && sizeof($parts) > 0 )
 		{
 			$file_name = end($parts);
 			$download_file_path = ROOT . "tmp/" . $file_name . "." . date("YmdHis");
@@ -211,14 +342,13 @@ class Data extends Controller
 			$this->log->info("[MERGE] sync downloaded file : " . $download_file_path);
 			$file_model->merge_msp_data($download_file_path);
 			$this->log->info("[REMOVE] sync downloaded file : " . $download_file_path);
-			$file_model->remove_file($download_file_path); 
+			$file_model->remove_file($download_file_path);
 		}
 		$this->log->info("[END SYNC] merge url data : " . $external_file_url);
 	}
 	
 	private function get_header_value($field)
 	{
-// 		$this->log->info("header: $name => $value");
 		foreach ( getallheaders() as $name => $value ) {
 			if ( strcmp($field, $name) == 0 ) {
 				return $value;

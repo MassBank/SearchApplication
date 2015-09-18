@@ -44,8 +44,8 @@ class Ms_Model extends Model
 		$sql = "CREATE TABLE IF NOT EXISTS `" . self::TABLE . "` (
 					`MS_TYPE_ID` INT(5) AUTO_INCREMENT NOT NULL,
 					`MS_TYPE_NAME` VARCHAR(10) NOT NULL,
-					PRIMARY KEY (`MS_TYPE_ID`)) 
-				CHARACTER SET utf8 COLLATE utf8_general_ci;";
+					PRIMARY KEY (`MS_TYPE_ID`)
+				) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 		$this->_db->execute($sql);
 	}
 	

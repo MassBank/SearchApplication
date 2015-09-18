@@ -41,9 +41,8 @@ class Compound_Name_Model extends Model
 					`NAME` VARCHAR(255) NOT NULL,
 					`COMPOUND_ID` VARCHAR(10) NOT NULL,
 					PRIMARY KEY (`COMPOUND_NAME_ID`),
-					FOREIGN KEY (`COMPOUND_ID`) REFERENCES COMPOUND(`COMPOUND_ID`)
-				)
-				CHARACTER SET utf8 COLLATE utf8_general_ci";
+					KEY `FK_IDX_COMPOUNDNAME_COMPOUND` (`COMPOUND_ID`)
+				) ENGINE=InnoDB DEFAULT CHARSET=utf8";
 		$this->_db->execute($sql);
 	}
 	
@@ -67,7 +66,7 @@ class Compound_Name_Model extends Model
 		return $this->_db->execute($sql, $params);
 	}
 	
-	public function insert($compound_name, $compound_id)
+	public function insert($compound_id, $compound_name)
 	{
 		$sql = "INSERT INTO " . self::TABLE . " (
 				NAME, COMPOUND_ID

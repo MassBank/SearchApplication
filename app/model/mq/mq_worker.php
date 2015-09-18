@@ -61,18 +61,25 @@ class MqWorker {
 	private function complete($messageType, MqMessage $message) {
 		# Generic method
 		$this->log->info("[START] worker complete");
+		
 		$data = $message->getData();
-		$sb = new String_Builder();
-		$sb->append( $data['host-url'] . "data/merge" );
-		$sb->append( "?resource=" . $data['resource'] );
-		if ( isset($data['media_types']) ) {
-			foreach ( $data['media_types'] as $media_type ) {
-				$sb->append( "&media_types[]=" . $media_type );
+		if ( !empty($data) ) {
+			$sb = new String_Builder();
+			$sb->append( $data['host-url'] . "data/merge" );
+			$sb->append( "?resource=" . $data['resource'] );
+			if ( isset($data['media_types']) ) {
+				foreach ( $data['media_types'] as $media_type ) {
+					$sb->append( "&media_types[]=" . $media_type );
+				}
 			}
+			$data_url = $sb->to_string();
+			$this->log->info("[URL] server URL: " . $data_url);
+			$response = file_get_contents( $data_url );
+			
+		} else {
+			$this->log->info("[EMPTY] no worker to execute");
 		}
-		$data_url = $sb->to_string();
-		$this->log->info("[URL] server URL: " . $data_url);
-		$response = file_get_contents( $data_url );
+		
 		$this->log->info("[END] worker complete");
 	}
 }

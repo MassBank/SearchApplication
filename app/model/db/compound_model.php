@@ -221,17 +221,20 @@ class Compound_Model extends Model
 	{
 		$sql = "CREATE TABLE IF NOT EXISTS `" . Compound_Model::TABLE . "` (
 					`COMPOUND_ID` VARCHAR(10) NOT NULL,
-					`TITLE` VARCHAR(255) NOT NULL,				
-					`FORMULA` VARCHAR(255),
-					`EXACT_MASS` FLOAT(10,5),
-					`ION_MODE` TINYINT,
-					`MS_TYPE_ID` INT(5) NOT NULL,
-					`INSTRUMENT_ID` INT(11) NOT NULL,
+					`TITLE` VARCHAR(255) DEFAULT NULL,				
+					`FORMULA` VARCHAR(255) DEFAULT NULL,
+					`EXACT_MASS` FLOAT(10,5) DEFAULT NULL,
+					`ION_MODE` TINYINT DEFAULT NULL,
+					`PUBCHEM_ID` varchar(255) DEFAULT NULL,
+  					`PUBCHEM_ID_TYPE` varchar(100) DEFAULT NULL,
+					`MS_TYPE_ID` INT(5) DEFAULT NULL,
+					`INSTRUMENT_ID` INT(11) DEFAULT NULL,
+					`CREATE_DATE` datetime DEFAULT NULL,
+  					`UPDATE_DATE` datetime DEFAULT NULL,
 					PRIMARY KEY (`COMPOUND_ID`),
-					FOREIGN KEY (`MS_TYPE_ID`) REFERENCES MS_TYPE(`MS_TYPE_ID`),
-					FOREIGN KEY (`INSTRUMENT_ID`) REFERENCES INSTRUMENT(`INSTRUMENT_ID`)
-				)
-				CHARACTER SET utf8 COLLATE utf8_general_ci";
+					KEY `FK_IDX_COMPOUND_MSTYPE` (`MS_TYPE_ID`),
+					KEY `FK_IDX_COMPOUND_INSTRUMENT` (`INSTRUMENT_ID`)
+				) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 		$this->_db->execute($sql);
 	}
 	
@@ -273,19 +276,28 @@ class Compound_Model extends Model
 		$this->_db->execute($sql, $parameters);
 	}
 	
-	public function insert($compound_id, $title, $formula, $exact_mass, $ion_mode, $ms_type_id, $instrument_id)
+	public function insert($compound_id, $title, $formula, $exact_mass, $ion_mode, 
+			$pubchem_id, $pubchem_id_type, $instrument_id, $ms_type_id, $create_date, $update_date)
 	{
 		$sql = "INSERT INTO " . Compound_Model::TABLE . " (
-				COMPOUND_ID, TITLE, FORMULA, EXACT_MASS, ION_MODE, MS_TYPE_ID, INSTRUMENT_ID
-				) VALUES (:compound_id, :title, :formula, :exact_mass, :ion_mode, :ms_type_id, :instrument_id)";
+				COMPOUND_ID, TITLE, FORMULA, EXACT_MASS, ION_MODE, PUBCHEM_ID, PUBCHEM_ID_TYPE, 
+				INSTRUMENT_ID, MS_TYPE_ID, CREATE_DATE, UPDATE_DATE
+				) VALUES (
+				:compound_id, :title, :formula, :exact_mass, :ion_mode, :pubchem_id, :pubchem_id_type, 
+				:instrument_id, :ms_type_id, :create_date, :update_date)";
 		$parameters = array(
 				':compound_id' => $compound_id, 
 				':title' => $title, 
 				':formula' => $formula, 
 				':exact_mass' => $exact_mass, 
-				':ion_mode' => $ion_mode, 
-				':ms_type_id' => $ms_type_id, 
-				':instrument_id' => $instrument_id);
+				':ion_mode' => $ion_mode,
+				':pubchem_id' => $pubchem_id,
+				':pubchem_id_type' => $pubchem_id_type,
+				':instrument_id' => $instrument_id,
+				':ms_type_id' => $ms_type_id,
+				':create_date' => $create_date,
+				':update_date' => $update_date
+		);
 		$this->_db->execute($sql, $parameters);
 	}
 	

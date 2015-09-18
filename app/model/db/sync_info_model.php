@@ -42,6 +42,13 @@ class Sync_Info_Model extends Model
 				':timestamp' => $timestamp);
 		$this->_db->execute($sql, $parameters);
 	}
+	// manipulation query
+	
+	public function delete_all()
+	{
+		$sql = "DELETE FROM `" . self::TABLE . "`";
+		$this->_db->execute($sql);
+	}
 	
 	public function drop_table()
 	{
@@ -58,8 +65,8 @@ class Sync_Info_Model extends Model
 					`MEDIA_TYPE` VARCHAR(100) NOT NULL,
 					`UPDATED` VARCHAR(11) NOT NULL,
 					`TIMESTAMP` DATETIME NOT NULL,
-					PRIMARY KEY (`SYNC_ID`))
-				CHARACTER SET utf8 COLLATE utf8_general_ci;";
+					PRIMARY KEY (`SYNC_ID`)
+				) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 		$this->_db->execute($sql);
 	}
 	

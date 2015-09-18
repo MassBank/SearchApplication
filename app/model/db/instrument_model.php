@@ -45,11 +45,10 @@ class Instrument_Model extends Model
 	public function create_table_if_not_exists()
 	{
 		$sql = "CREATE TABLE IF NOT EXISTS `" . self::TABLE . "` (
-					`INSTRUMENT_ID` INT(11) AUTO_INCREMENT NOT NULL,
+					`INSTRUMENT_ID` INT(5) AUTO_INCREMENT NOT NULL,
 					`INSTRUMENT_TYPE` VARCHAR(100) NOT NULL,
 					PRIMARY KEY (`INSTRUMENT_ID`)
-				) 
-				CHARACTER SET utf8 COLLATE utf8_general_ci;";
+				) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 		$this->_db->execute($sql);
 	}
 	

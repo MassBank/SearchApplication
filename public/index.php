@@ -11,12 +11,16 @@ ob_start ();
 require(APP . '/core/autoloader.php');
 
 // define routes
-Router::get('search', 'search@index'); 				// GET request
+// Router::get('search', 'search@index'); 				// GET request
 Router::get('search/quick', 'search@quick'); 		// GET request
 Router::get('search/peak', 'search@peak'); 			// GET request
 
+Router::get('data/refresh', 'data@refresh'); 				// GET request
+Router::get('data/mergedirdata', 'data@merge_dir_data');	// GET request
+
 Router::post('data/sync', 'data@sync'); 			// POST request
 Router::get('data/merge', 'data@merge_resource'); 	// GET request
+Router::get('data/synctest', 'data@synctest');
 // Router::get('data/sync', 'data@sync');
 // Router::get('data/mergedata', 'data@merge_resource_data');
 // Router::get('data', 'data@index');

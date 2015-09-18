@@ -21,18 +21,31 @@ class Database
 	}
 
 	public function execute($sql, $parameters = NULL) {
-		$query = $this->db->prepare($sql);
-		if (empty($parameters)) {
-			$query->execute();
-		} else {
-			$query->execute($parameters);
+		
+		try {
+			$query = $this->db->prepare($sql);
+			if (empty($parameters)) {
+				$query->execute();
+			} else {
+				$query->execute($parameters);
+			}
+			
+			if ( empty($parameters) ) {
+				$this->log->sql($sql);
+			} else {
+				$this->log->sql($sql . " --> " . var_export($parameters, true));
+			}
+			
+		} catch (Exception $e) {
+			$this->log->error($e->getCode() . " - " . $e->getMessage());
+			if ( empty($parameters) ) {
+				$this->log->error($sql);
+			} else {
+				$this->log->error($sql . " --> " . var_export($parameters, true));
+			}
 		}
 		
-		if ( empty($parameters) ) {
-			$this->log->debug($sql);
-		} else {
-			$this->log->debug($sql . " --> " . var_export($parameters, true));
-		}
+		
 // 		$this->log->debug( strtr($sql, $parameters) );
 		return $query;
 	}

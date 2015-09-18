@@ -66,10 +66,14 @@ define('URL', URL_PROTOCOL . URL_DOMAIN . URL_SUB_FOLDER);
  */
 define('DB_TYPE', 'mysql');
 define('DB_CHARSET', 'utf8');
-define('DB_HOST', '<database host>');
-define('DB_NAME', '<database name>');
-define('DB_USER', '<database user>');
-define('DB_PASS', '<database password>');
+// define('DB_HOST', '<database host>');
+// define('DB_NAME', '<database name>');
+// define('DB_USER', '<database user>');
+// define('DB_PASS', '<database password>');
+define('DB_HOST', 'localhost');
+define('DB_NAME', 'mbsearchapidb3');
+define('DB_USER', 'root');
+define('DB_PASS', 'abcd1234');
 
 define('LOG_FILE_PREFIX', 'massbankapi');
 define('LOG_FILE_FOLDER', ROOT . 'log/');

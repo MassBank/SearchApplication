@@ -159,9 +159,10 @@ class Peak_Model extends Model
 					`RELATIVE_INTENSITY` INT(6) NOT NULL DEFAULT '0',
 					`COMPOUND_ID` VARCHAR(10) NOT NULL,
 					PRIMARY KEY (`PEAK_ID`),
-					FOREIGN KEY (`COMPOUND_ID`) REFERENCES COMPOUND(`COMPOUND_ID`)
-				) 
-				CHARACTER SET utf8 COLLATE utf8_general_ci;";
+					KEY `IDX_PEAK_MZ` (`MZ`),
+				  	KEY `IDX_PEAK_RELATIVE_INTENSITY` (`RELATIVE_INTENSITY`),
+				  	KEY `IDX_PEAK_COMPOUND` (`COMPOUND_ID`)
+				) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 		$this->_db->execute($sql);
 	}
 	
@@ -191,6 +192,7 @@ class Peak_Model extends Model
 			$sql_sb->append( "), " );
 		}
 		$sql = rtrim(trim($sql_sb->to_string()), ",");
+		$this->log->debug($sql);
 		$this->_db->execute($sql);
 	}
 	
