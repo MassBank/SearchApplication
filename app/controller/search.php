@@ -51,18 +51,36 @@ class Search extends Controller
 	
 	public function index()
 	{
-		// index
-		echo "start search index <br/>";
-		
-		$list = array();
-		if (!isset($list['A'])){
-			$list['A'] = "";
+		try {
+			$log = new Log4Massbank();
+			$log->debug( '[START] all search' );
+				
+			$search_model = new All_Search_Model();
+			$search_params = $this->_get_params_all_search();
+			$result = $search_model->index($search_params);
+			$req = $this->_get_request_settings($search_params);
+				
+			$req["pagination"]["hit_count"] = $result['hit_count'];
+			$data = $result['data'];
+				
+			$log->debug( '[END] all search' );
+			$this->_success($data, $req);
+		} catch (Exception $e) {
+			$this->_error($e);
 		}
-		$list['A'] = $list['A'] . 10 . ",";
-		$list['A'] = $list['A'] . 20 . ",";
-		$list['A'] = $list['A'] . 30 . ",";
-		$list['A'] = $list['A'] . 40 . ",";
-		print_r($list);
+		
+		// index
+// 		echo "start search index <br/>";
+		
+// 		$list = array();
+// 		if (!isset($list['A'])){
+// 			$list['A'] = "";
+// 		}
+// 		$list['A'] = $list['A'] . 10 . ",";
+// 		$list['A'] = $list['A'] . 20 . ",";
+// 		$list['A'] = $list['A'] . 30 . ",";
+// 		$list['A'] = $list['A'] . 40 . ",";
+// 		print_r($list);
 		
 // 		$formula_list = array('coffee', 'brown', 'caffeine');
 // 		$where = "";
@@ -159,7 +177,7 @@ class Search extends Controller
 // 		array_push($instrument_types, 'ESI-ITFT');
 // 		$instruments = $this->_instrument_model->get_instruments_by_types($instrument_types);
 // 		print_r($instruments);
-		echo "end search index";
+// 		echo "end search index";
 	}
 	
 	public function quick()
@@ -334,6 +352,72 @@ class Search extends Controller
 	private function _full_url($s, $use_forwarded_host=false)
 	{
 		return $this->_url_origin($s, $use_forwarded_host) . $s['REQUEST_URI'];
+	}
+	
+	private function _get_params_all_search()
+	{
+		
+		/*
+		 * /api/test?
+		 * ionization_type=ESI&platform=ESI-IT ESI-TOF
+		 * &mz=MS MS2&charge=1&keyword=sample s a&mol_mass=180.03123&mol_mass_tol=0.3
+		 * &formula=c6h123k3&peak_mz=133.0&peak_mz_tol=0.5&peak_mz_diff=on
+		 * &peak_mz_cutoff=5&retension_index=&retention_index_tol=&limit_page=10
+		 * &table_id=massbank id&sort=ascending
+		 */
+		
+		// params
+		$params = $this->parse_query_str();
+		
+		$instrument_type_list = $this->GET_PARAM_ARRAY("platform", $params); // platform
+		$ms_type_list = $this->GET_PARAM_ARRAY(self::PARAM_MS_TYPE, $params); // m/z
+		$ion_mode = $this->GET_PARAM("charge", $params)?:self::PARAM_ION_MODE_DEFAULT;
+		
+		$keyword_list = $this->GET_PARAM_ARRAY("keyword", $params);
+		$mol_mass = $this->GET_NUMERIC_PARAM("mol_mass", $params);
+		$mol_mass_tol = $this->GET_NUMERIC_PARAM("mol_mass_tol", $params);
+		$formula = $this->GET_PARAM(self::PARAM_FORMULA, $params);
+		
+		$peak_mz_list = $this->GET_PARAM_ARRAY("peak_mz", $params);
+		$peak_mz_tol = $this->GET_NUMERIC_PARAM("peak_mz_tol", $params);
+		$is_peak_mz_diff = strcasecmp( $this->GET_PARAM("peak_mz_diff", $params), "ON" ) == 0 ? true : false;
+		$peak_mz_cutoff = $this->GET_NUMERIC_PARAM("peak_mz_cutoff", $params);
+		
+		$start = $this->GET_PARAM(self::PARAM_START, $params)?:self::PARAM_START_DEFAULT;
+		$limit = $this->GET_PARAM("limit_page", $params)?:self::PARAM_LIMIT_DEFAULT;
+		$sort = $this->GET_PARAM(self::PARAM_SORT, $params)?:self::PARAM_SORT_DEFAULT;
+		$sort = (0 === stripos($sort, "asc") ? "ASC" : "DESC");
+		
+		$table_id = $this->GET_PARAM("table_id", $params);
+		$order = "COMPOUND_ID";
+		if ( strcasecmp( $table_id, "massbank id" )  == 0 ) {
+			$order = "C.COMPOUND_ID";
+		} elseif ( strcasecmp( $table_id, "compound name" ) == 0 ) {
+			$order = "CN.NAME";
+		}
+		
+		$params = $this->parse_query_str();
+		$result = new All_Search_Param();
+		
+		$result->set_keyword_terms($keyword_list);
+		$result->set_mol_mass($mol_mass);
+		$result->set_mol_mass_tolerance($mol_mass_tol);
+		$result->set_formula_term($formula);
+		
+		$result->set_peak_mz($peak_mz_list);
+		$result->set_peak_mz_tolerance($peak_mz_tol);
+		$result->set_peak_mz_diff($is_peak_mz_diff);
+		$result->set_peak_mz_cutoff($peak_mz_cutoff);
+		
+		$result->set_instrument_types($instrument_type_list);
+		$result->set_ms_types($ms_type_list);
+		$result->set_ion_mode($ion_mode);
+		// pagination params
+		$result->set_start($start);
+		$result->set_limit($limit);
+		$result->set_sort($sort);
+		$result->set_order($order);
+		return $result;
 	}
 	
 	private function _get_params_quick_search_by_keyword()

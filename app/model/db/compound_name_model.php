@@ -20,6 +20,12 @@ class Compound_Name_Model extends Model
 		return $this->_db->unique_result($sql, $params);
 	}
 	
+	public function get_compound_names_by_ids($compound_ids)
+	{
+		$sql = "SELECT * FROM " . self::TABLE . " C WHERE C." . Column::COMPOUND_ID . " IN ('" . implode("','", $compound_ids) . "')";
+		return $this->_db->list_result($sql);
+	}
+	
 	public function delete_all()
 	{
 // 		$sql = "TRUNCATE TABLE `" . Compound_Name_Model::TABLE . "`"; // very quickly than DELETE FROM TABLE

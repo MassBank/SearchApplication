@@ -12,6 +12,8 @@ function massbank_autoloader($class)
 	include_class_file("/model/service/", $class);
 	include_class_file("/entity/param/", $class);
 	include_class_file("/model/log/", $class);
+	include_class_file("/model/logic/", $class);
+	include_class_file("/model/db/", $class);
 }
 
 function include_class_file($dir, $class)

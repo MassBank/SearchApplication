@@ -216,10 +216,84 @@ class Data extends Controller
 // 		}
 	}
 	
+	public function download() {
+		echo "START";
+		$url = "http://49.212.184.212/mnn-2/revisions/ae314952-4af6-42f3-a866-03d90b46f152/resources/mt/f33a2d9751f4a10ea57b62f970f84e0e?offset=50";
+		$parts = explode('/', $url);
+		$file_name = end($parts);
+		$download_file_path = ROOT . "tmp/" . $file_name . "." . date("YmdHis");
+			
+		$output = false;
+		if ( function_exists('curl_init') ) {
+			# open file to write
+			$fp = fopen ($download_file_path, 'w+');
+			# start curl
+			$ch = curl_init();
+			curl_setopt( $ch, CURLOPT_URL, $url );
+			# set return transfer to false
+			curl_setopt( $ch, CURLOPT_RETURNTRANSFER, false );
+			curl_setopt( $ch, CURLOPT_BINARYTRANSFER, true );
+			curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
+			# increase timeout to download big file
+			curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, 10 );
+			# write data to local file
+			curl_setopt( $ch, CURLOPT_FILE, $fp );
+			# execute curl
+			curl_exec( $ch );
+			# close curl
+			curl_close( $ch );
+			# close local file
+			fclose( $fp );
+			
+			if (filesize($download_file_path) > 0) return true;
+			
+			
+			
+			
+// 			$fp = fopen ( $download_file_path, "w+" );
+// 			$ch = curl_init();
+// 			curl_setopt( $ch, CURLOPT_URL, $url );
+// 			curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
+// 			curl_setopt( $ch, CURLOPT_TIMEOUT, $timeout );
+// 			//curl_setopt( $ch, CURLOPT_HTTPHEADER, $headers );
+// 			curl_setopt( $ch, CURLOPT_FILE, $fp );
+// 			$output = curl_exec( $ch );
+// 			curl_close( $ch );
+// 			fclose( $fp );
+		} else {
+			$this->log->error("cURL is not installed");
+		}
+		echo "END";
+		return $output;
+	}
+	
 	public function merge_resource() {
 		$resource_url = $_GET["resource"];
 		$media_types = $_GET["media_types"];
 		$this->merge_url_data($resource_url, $media_types);
+	}
+	
+	// TEMP
+	public function merge_temp() {
+		$this->log->info("[START] merge temp folder");
+		if ($handle = opendir(ROOT . "tmp/")) {
+			$this->log->info("Directory handle: $handle\n");
+		
+			$file_model = new File_Model();
+			/* This is the correct way to loop over the directory. */
+			while (false !== ($entry = readdir($handle))) {
+				if ($entry != "." && $entry != "..") {
+					$download_file_path = ROOT . "tmp/" . $entry;
+					$this->log->info("[MERGE] sync downloaded file : " . $download_file_path);
+					$file_model->merge_msp_data($download_file_path);
+					$this->log->info("[REMOVE] sync downloaded file : " . $download_file_path);
+					$file_model->remove_file($download_file_path);
+				}
+			}
+		
+			closedir($handle);
+		}
+		$this->log->info("[END] merge temp folder");
 	}
 
 // 	public function merge_resource_data()

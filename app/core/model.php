@@ -71,7 +71,12 @@ abstract class Model {
 			$order_column = $pagination->get_order();
 	
 			if ( !empty($order_column) ) {
-				$sb_sql->append(" ORDER BY C." . strtoupper($order_column));
+				if (strpos($order_column, ".") !== false) {
+					$sb_sql->append(" ORDER BY " . strtoupper($order_column));
+				} else {
+					$sb_sql->append(" ORDER BY C." . strtoupper($order_column));
+				}
+				
 				$sort = $pagination->get_sort();
 				if ( !empty($sort) ) {
 					$sb_sql->append(" " . strtoupper($sort));

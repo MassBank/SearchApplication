@@ -46,6 +46,15 @@ class Controller
 		return $result;
 	}
 
+	public function GET_PARAM_ARRAY($name, $params)
+	{
+		$list_str = $this->GET_PARAM($name, $params);
+		if (!empty($list_str)) {
+			return preg_split('/[\ \n\,]+/', $list_str);
+		}
+		return array();
+	}
+
 	public function GET_PARAM($name, $params)
 	{
 		$name = strtolower($name); // change param name to lower-case
@@ -53,6 +62,17 @@ class Controller
 			return $params[$name];
 		}
 		return NULL;
+	}
+	
+	public function GET_NUMERIC_PARAM($name, $params)
+	{
+		$name = strtolower($name); // change param name to lower-case
+		if ( isset($params[$name]) ) {
+			$n = $params[$name] + 0;
+			if( !is_numeric($n) ) return 0;
+			return ( is_float($n) ) ? (float) $n : (int) $n;
+		}
+		return 0;
 	}
 	
 	protected function parse_query_str()

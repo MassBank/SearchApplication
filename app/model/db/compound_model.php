@@ -16,6 +16,97 @@ class Compound_Model extends Model
 		$this->log = new Log4Massbank();
 	}
 	
+	public function get_compounds_by_keywords_and_ids($compound_ids,
+			$keyword_terms, $formula_term, $min_mol_mass, $max_mol_mass,
+			$ion_mode, $instrument_ids, $ms_type_ids, $pagination = NULL, $is_count = FALSE)
+	{
+		$op1 = "AND";
+		$op2 = "AND";
+		
+		$sb_compound_sql = new String_Builder();
+		if ( $is_count || empty($pagination) ) {
+			$sb_compound_sql->append("SELECT COUNT(DISTINCT C.COMPOUND_ID) AS HIT_COUNT FROM ");
+		} else {
+			$sb_compound_sql->append("SELECT DISTINCT C.COMPOUND_ID, C.TITLE, C.ION_MODE, C.FORMULA, C.PUBCHEM_ID, C.PUBCHEM_ID_TYPE, C.EXACT_MASS FROM ");
+		}
+		$sb_compound_sql->append(Compound_Name_Model::TABLE . " CN LEFT JOIN " . self::TABLE . " C ON CN.COMPOUND_ID = C.COMPOUND_ID");
+		
+		$where_clause = array();
+		$where_clause2 = array();
+		
+		// ion_mode
+		if ( $ion_mode == 1 ) {
+			array_push($where_clause, "C.ION_MODE > 0");
+		} else if ( $ion_mode == -1 ) {
+			array_push($where_clause, "C.ION_MODE < 0");
+		}
+		// instruments
+		if ( !empty($instrument_ids) ) {
+			array_push($where_clause, "C.INSTRUMENT_ID IN(" . implode(",", $instrument_ids) . ")");
+		}
+		// ms
+		if ( !empty($ms_type_ids) ) {
+			array_push($where_clause, "C.MS_TYPE_ID IN(" . implode(",", $ms_type_ids) . ")");
+		}
+		// compound ids
+		if ( !empty($compound_ids) ) {
+			array_push($where_clause, "C.COMPOUND_ID IN(" . implode(",", $compound_ids) . ")");
+		}
+		// compound name
+		if ( !empty($keyword_terms) ) {
+			$i = 0;
+			array_push($where_clause2, "(");
+			foreach ($keyword_terms as $keyword_term) {
+				$keyword_term = str_replace("'", "''", $keyword_term);
+				if ($i > 0) {
+					array_push($where_clause2, " || ");
+				}
+				array_push($where_clause2, "CN.NAME LIKE '%" . $keyword_term . "%'");
+				array_push($where_clause2, " || C.TITLE LIKE '%" . $keyword_term . "%'");
+				array_push($where_clause2, " || C.AUTHORS LIKE '%" . $keyword_term . "%'");
+				array_push($where_clause2, " || C.LICENSE LIKE '%" . $keyword_term . "%'");
+				array_push($where_clause2, " || C.INSTRUMENT LIKE '%" . $keyword_term . "%'");
+				array_push($where_clause2, " || C.FORMULA LIKE '%" . $keyword_term . "%'");
+				array_push($where_clause2, " || C.COMPOUND_ID LIKE '%" . $keyword_term . "%'");
+				$i++;
+			}
+			array_push($where_clause2, ")");
+		}
+		// min & max exact mass
+		if ( $min_mol_mass && $max_mol_mass ) {
+			array_push($where_clause2, " " . $op1 . " ");
+			array_push($where_clause2, "(C.EXACT_MASS BETWEEN " . $min_mol_mass . " AND " . $max_mol_mass . ")");
+		}
+		// formula
+		if ( $formula_term ) {
+			array_push($where_clause2, " " . $op2 . " ");
+			array_push($where_clause2, "C.FORMULA LIKE '%" . $formula_term . "%'");
+		}
+		
+		$str_where_clause2 = implode("", $where_clause2);
+		if ( Common_Util::startwith($str_where_clause2, " " . $op1 . " ") ) {
+			$str_where_clause2 = Common_Util::first_str_replace($str_where_clause2, " " . $op1 . " ", "");
+		}
+		else if ( Common_Util::startwith($str_where_clause2, " " . $op2 . " ") ) {
+			$str_where_clause2 = Common_Util::first_str_replace($str_where_clause2, " " . $op2 . " ", "");
+		}
+		
+		if ( !empty($str_where_clause2) ) {
+			array_push($where_clause, "(" . $str_where_clause2 . ")");
+		}
+		
+		if ( !empty($where_clause) ) {
+			$sb_compound_sql->append(" WHERE ");
+			$sb_compound_sql->append(implode(" AND ", $where_clause));
+		}
+		
+		$this->append_pagination_clause($sb_compound_sql, $pagination);
+		
+		$sql = $sb_compound_sql->to_string();
+		$this->log->debug($sql);
+		return $this->_db->list_result($sql);
+	}
+	
 	public function get_compounds_by_keywords(
 			$compound_name_term, $formula_term, $min_mz, $max_mz, $op1, $op2,
 			$ion_mode, $instrument_ids, $ms_type_ids, $pagination, $is_count = FALSE)
@@ -78,7 +169,9 @@ class Compound_Model extends Model
 			$sb_compound_sql->append(implode(" AND ", $where_clause));
 		}
 		
-		$this->append_pagination_clause($sb_compound_sql, $pagination);
+		if ( !empty($pagination) ) {
+			$this->append_pagination_clause($sb_compound_sql, $pagination);
+		}
 	
 		$sql = $sb_compound_sql->to_string();
 		$this->log->debug($sql);
@@ -221,7 +314,10 @@ class Compound_Model extends Model
 	{
 		$sql = "CREATE TABLE IF NOT EXISTS `" . Compound_Model::TABLE . "` (
 					`COMPOUND_ID` VARCHAR(10) NOT NULL,
-					`TITLE` VARCHAR(255) DEFAULT NULL,				
+					`TITLE` VARCHAR(255) DEFAULT NULL,	
+					`AUTHORS` VARCHAR(255) DEFAULT NULL,	
+					`INSTRUMENT` VARCHAR(255) DEFAULT NULL,
+					`LICENSE` VARCHAR(255) DEFAULT NULL,		
 					`FORMULA` VARCHAR(255) DEFAULT NULL,
 					`EXACT_MASS` FLOAT(10,5) DEFAULT NULL,
 					`ION_MODE` TINYINT DEFAULT NULL,
@@ -238,32 +334,35 @@ class Compound_Model extends Model
 		$this->_db->execute($sql);
 	}
 	
-	public function merge($compound_id, $title, $formula, $exact_mass, $ion_mode, 
+	public function merge($compound_id, $title, $authors, $instrument, $license, $formula, $exact_mass, $ion_mode, 
 			$pubchem_id, $pubchem_id_type, $instrument_id, $ms_type_id, $create_date, $update_date)
 	{
 		$compound = $this->get_compound_by_id($compound_id);
 		if ($compound != NULL) {
 			$this->log->info( "[UPDATE] Compound Info: " . $compound_id );
-			$this->update($compound_id, $title, $formula, $exact_mass, $ion_mode, 
+			$this->update($compound_id, $title, $authors, $instrument, $license, $formula, $exact_mass, $ion_mode, 
 					$pubchem_id, $pubchem_id_type, $instrument_id, $ms_type_id, $update_date);
 		} else {
 			$this->log->info( "[INSERT] Compound Info: " . $compound_id );
-			$this->insert($compound_id, $title, $formula, $exact_mass, $ion_mode, 
+			$this->insert($compound_id, $title, $authors, $instrument, $license, $formula, $exact_mass, $ion_mode, 
 					$pubchem_id, $pubchem_id_type, $instrument_id, $ms_type_id, $create_date, $update_date);
 		}
 	}
 	
-	public function update($compound_id, $title, $formula, $exact_mass, $ion_mode, 
+	public function update($compound_id, $title, $authors, $instrument, $license, $formula, $exact_mass, $ion_mode, 
 			$pubchem_id, $pubchem_id_type, $instrument_id, $ms_type_id, $update_date)
 	{
 		$sql = "UPDATE " . Compound_Model::TABLE . " 
-				SET TITLE=:title, FORMULA=:formula, EXACT_MASS=:exact_mass, 
+				SET TITLE=:title, AUTHORS=:authors, INSTRUMENT=:instrument, LICENSE=:license, FORMULA=:formula, EXACT_MASS=:exact_mass, 
 				ION_MODE=:ion_mode, PUBCHEM_ID=:pubchem_id, PUBCHEM_ID_TYPE=:pubchem_id_type, INSTRUMENT_ID=:instrument_id, MS_TYPE_ID=:ms_type_id,
 				UPDATE_DATE=:update_date
 				WHERE COMPOUND_ID =:compound_id";
 		$parameters = array(
 				':compound_id' => $compound_id,
 				':title' => $title,
+				':authors' => $authors,
+				':instrument' => $instrument,
+				':license' => $license,
 				':formula' => $formula,
 				':exact_mass' => $exact_mass,
 				':ion_mode' => $ion_mode,
@@ -276,18 +375,21 @@ class Compound_Model extends Model
 		$this->_db->execute($sql, $parameters);
 	}
 	
-	public function insert($compound_id, $title, $formula, $exact_mass, $ion_mode, 
+	public function insert($compound_id, $title, $authors, $instrument, $license, $formula, $exact_mass, $ion_mode, 
 			$pubchem_id, $pubchem_id_type, $instrument_id, $ms_type_id, $create_date, $update_date)
 	{
 		$sql = "INSERT INTO " . Compound_Model::TABLE . " (
-				COMPOUND_ID, TITLE, FORMULA, EXACT_MASS, ION_MODE, PUBCHEM_ID, PUBCHEM_ID_TYPE, 
+				COMPOUND_ID, TITLE, AUTHORS, INSTRUMENT, LICENSE, FORMULA, EXACT_MASS, ION_MODE, PUBCHEM_ID, PUBCHEM_ID_TYPE, 
 				INSTRUMENT_ID, MS_TYPE_ID, CREATE_DATE, UPDATE_DATE
 				) VALUES (
-				:compound_id, :title, :formula, :exact_mass, :ion_mode, :pubchem_id, :pubchem_id_type, 
+				:compound_id, :title, :authors, :instrument, :license, :formula, :exact_mass, :ion_mode, :pubchem_id, :pubchem_id_type, 
 				:instrument_id, :ms_type_id, :create_date, :update_date)";
 		$parameters = array(
 				':compound_id' => $compound_id, 
 				':title' => $title, 
+				':authors' => $authors,
+				':instrument' => $instrument,
+				':license' => $license,
 				':formula' => $formula, 
 				':exact_mass' => $exact_mass, 
 				':ion_mode' => $ion_mode,

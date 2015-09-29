@@ -34,5 +34,19 @@ class Common_Util
 		}
 		return $str;
 	}
+	
+	public static function get_min_max_by_tolerance($mass, $tolerance)
+	{
+		$result = array();
+		if ( $mass > 0 ) 
+		{
+			$tolerance = abs($tolerance); // get absolute value of tolerance. (2 or -2 => 2)
+			$min_mass = $mass - $tolerance - 0.00001;
+			$max_mass = $mass + $tolerance + 0.00001;
+			$result[0] = $min_mass;
+			$result[1] = $max_mass;
+		}
+		return $result;
+	}
 }
 ?>

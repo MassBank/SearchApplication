@@ -30,16 +30,38 @@ class File_Model extends Model
 	{
 		$output = false;
 		if ( function_exists('curl_init') ) {
-			$fp = fopen ( $download_file_path, "w+" );
+			# open file to write
+			$fp = fopen ($download_file_path, 'w+');
+			# start curl
 			$ch = curl_init();
 			curl_setopt( $ch, CURLOPT_URL, $url );
-			curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
-			curl_setopt( $ch, CURLOPT_TIMEOUT, $timeout );
-	        curl_setopt( $ch, CURLOPT_HTTPHEADER, $headers );
-	        curl_setopt( $ch, CURLOPT_FILE, $fp );
-			$output = curl_exec( $ch );
+			# set return transfer to false
+			curl_setopt( $ch, CURLOPT_RETURNTRANSFER, false );
+			curl_setopt( $ch, CURLOPT_BINARYTRANSFER, true );
+			curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, false );
+			# increase timeout to download big file
+			curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, 10 );
+			# write data to local file
+			curl_setopt( $ch, CURLOPT_FILE, $fp );
+			# execute curl
+			curl_exec( $ch );
+			# close curl
 			curl_close( $ch );
+			# close local file
 			fclose( $fp );
+				
+			if (filesize($download_file_path) > 0) return true;
+			
+// 			$fp = fopen ( $download_file_path, "w+" );
+// 			$ch = curl_init();
+// 			curl_setopt( $ch, CURLOPT_URL, $url );
+// 			curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1 );
+// 			curl_setopt( $ch, CURLOPT_TIMEOUT, $timeout );
+// 	        curl_setopt( $ch, CURLOPT_HTTPHEADER, $headers );
+// 	        curl_setopt( $ch, CURLOPT_FILE, $fp );
+// 			$output = curl_exec( $ch );
+// 			curl_close( $ch );
+// 			fclose( $fp );
 		} else {
 			$this->log->error("cURL is not installed");
 		}
@@ -130,6 +152,12 @@ class File_Model extends Model
 			$formula = $this->getvalue($line, Keyword::COMPOUND_FORMULA);
 			$tbl_compound[Column::COMPOUND_FORMULA] = $formula;
 			$tbl_compound[Column::COMPOUND_EXACT_MASS] = $this->calculate_mass($formula);
+		} else if ( $this->startwith($line, Keyword::COMPOUND_AUTHORS) ) {
+			$tbl_compound[Column::COMPOUND_AUTHORS] = $this->getvalue($line, Keyword::COMPOUND_AUTHORS);
+		} else if ( $this->startwith($line, Keyword::COMPOUND_INSTRUMENT) ) {
+			$tbl_compound[Column::COMPOUND_INSTRUMENT] = $this->getvalue($line, Keyword::COMPOUND_INSTRUMENT);
+		} else if ( $this->startwith($line, Keyword::COMPOUND_LICENSE) ) {
+			$tbl_compound[Column::COMPOUND_LICENSE] = $this->getvalue($line, Keyword::COMPOUND_LICENSE);
 		} else if ( $this->startwith($line, Keyword::COMPOUND_ION_MODE) ) {
 			$ion_mode = 0;
 			$str_ion_mode = $this->getvalue($line, Keyword::COMPOUND_ION_MODE);
@@ -278,6 +306,9 @@ class File_Model extends Model
 					$this->_compound_model->merge(
 							$tbl_compound[Column::COMPOUND_ID],
 							$tbl_compound[Column::COMPOUND_TITLE],
+							$tbl_compound[Column::COMPOUND_AUTHORS],
+							$tbl_compound[Column::COMPOUND_INSTRUMENT],
+							$tbl_compound[Column::COMPOUND_LICENSE],
 							$tbl_compound[Column::COMPOUND_FORMULA],
 							$tbl_compound[Column::COMPOUND_EXACT_MASS],
 							$tbl_compound[Column::COMPOUND_ION_MODE],
